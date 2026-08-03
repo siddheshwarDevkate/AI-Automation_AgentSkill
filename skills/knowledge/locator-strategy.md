@@ -4,7 +4,7 @@
 The single source of truth for discovering, selecting, validating, and maintaining Playwright locators. Objective: generate the most stable locator for every element — prefer long-term stability over shorter syntax.
 
 ## Used By Skills
-02 Locator Generation · 07 Framework Validation
+03 Locator Generation · 08 Framework Validation · 09 Test Execution & Self-Healing (locator-drift repairs)
 
 ## General Principles
 - **LS-001 — Use the Live Application.** Inspect the running DOM. Never assume attributes.

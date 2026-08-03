@@ -1,57 +1,67 @@
 # SKILL 06 — TEST DATA GENERATION
 
 ## Purpose
-Analyze generated test scenarios and determine the required test data. Decides WHAT test data is required — not how it's implemented.
+Determine the test data required to execute the generated scenarios, sourced primarily from each test case's `testData` field, and produce the actual `test-data/testData.ts` file. This Skill runs after Assertion Generation and before Spec Generation, so that by the time Spec Generation runs, every data constant a test will import already exists.
 
 ## Execution Dependencies
-**Knowledge:** framework-rules.md, generation-patterns.md, output-structure.md
-**Templates:** None — this Skill produces a Test Data Plan (data only), not generated code, so no output template is required.
+**Knowledge:** skills/knowledge/framework-rules.md, skills/knowledge/generation-patterns.md, skills/knowledge/output-structure.md, skills/knowledge/test-case-parsing-rules.md
+**Templates:** None — output format is governed directly by skills/knowledge/output-structure.md's Test Data Output section.
 
 ## Inputs
-Required: Application Analysis Report, Generated Spec Plan, Assertion Plan.
-Optional: existing test data, configuration files, environment information.
+Required: Test Case Model (from Skill 01).
+Optional: existing test data, configuration files, environment information, Application Analysis Report (for environment context).
 
 ## Expected Output
-- Test Data Plan
+- `test-data/testData.ts` — the real, generated file
 - Test data categories
-- Test data mapping
+- Test data mapping (per Test Case ID → constant name)
 - Shared test data strategy
 
-Passed directly to the framework for implementation.
+This Skill does not depend on Spec Generation or Assertion Generation's outputs — every value it needs comes directly from the Test Case Model's own `testData` field, parsed back in Skill 01. Producing the file now (before Spec Generation) is what lets Skill 07 import real constants instead of embedding literals.
+
+## Primary Source of Truth
+Each test case's `testData` field is the primary source for the values a scenario needs. Use it as supplied — do not alter values it already provides. Only infer additional data when `testData` is empty or incomplete for a step that clearly requires input, and clearly flag any inferred (as opposed to supplied) value in the output.
 
 ## Responsibilities
-Identify required test data, categorize it, map it to scenarios, eliminate duplicate data, promote reusable datasets, flag sensitive information.
+- Parse `testData` from every test case
+- Categorize it, map it to its source Test Case ID, eliminate duplicate data
+- Promote reusable datasets shared across multiple test cases into named constants
+- Flag sensitive information
+- Document any data gaps left after parsing `testData`
+- Generate `test-data/testData.ts` per skills/knowledge/output-structure.md's Test Data Output format
 
 ## Workflow
-Read Application Analysis → Read Spec Plan → Identify Required Test Data → Classify Test Data → Map Data to Scenarios → Remove Duplicate Data → Generate Test Data Plan
+Read Test Case Model → Extract `testData` per Test Case → Classify Test Data → Identify Reusable Datasets → Remove Duplicate Data → Map Data to Test Case IDs → Document Gaps → Generate `test-data/testData.ts`
 
 ## Test Data Identification
-Identify the minimum data required per workflow: user credentials, customer/product information, search keywords, form input, upload files, dates, configuration values, reference IDs. Generate only what the application actually requires.
+For each test case, extract the values referenced by its `testData` field and cross-reference them against its `steps` to confirm every input the steps require has a corresponding value. If a step needs an input value with none supplied in `testData`, document it as a gap rather than fabricating one.
 
 ## Test Data Classification
-Valid, invalid, boundary, empty, duplicate, special-character, business-rule, environment-specific — only categories applicable to the application.
+Valid, invalid, boundary, empty, duplicate, special-character, business-rule, environment-specific — classify based on how the test case's own `type`/`expectedResult` characterizes the scenario (e.g. a test case whose `expectedResult` describes an error is feeding invalid/boundary data).
 
 ## Data Reusability
-Identify shareable data (login credentials, default customer, common search values, frequently used records) to avoid duplicate datasets for identical scenarios.
+Identify test data shared verbatim across multiple test cases (e.g. the same valid login credentials reused by several scenarios) and promote it to a single shared constant instead of duplicating it per test case.
 
 ## Data Mapping
-Map each dataset to its scenario, e.g.:
-- Login → Valid User, Invalid User, Locked User
-- Customer Creation → Valid Customer, Missing Required Fields, Duplicate Customer
+Map each dataset to its source Test Case ID, e.g.:
+- TC-001 (Valid login) → `validUsername`, `validPassword`
+- TC-002 (Invalid password) → `validUsername`, `invalidPassword`
+
+This mapping tells Skill 07 (Spec Generation) exactly which constant to import for each test case.
 
 ## Sensitive Data Handling
-Flag values that should never be hardcoded: passwords, API keys, tokens, secrets, environment URLs. Recommend external configuration or secure storage.
+Flag values that should never be hardcoded: passwords, API keys, tokens, secrets, environment URLs — even when they come directly from the supplied `testData` column. Recommend external configuration or secure storage rather than writing them verbatim into `testData.ts`.
 
 ## Data Quality
-Verify every scenario has required data, no duplicate or unnecessary datasets exist, sensitive values are identified, and business rules are supported. Keep data realistic and maintainable.
+Verify every test case's data needs are satisfied by its `testData` (or a documented gap exists), no duplicate or unnecessary datasets exist, sensitive values are identified, and reused data stays consistent across test cases.
 
 ## Success Criteria
-Test Data Plan generated · data mapped to scenarios · duplicates removed · shared datasets identified · sensitive data documented.
+`test-data/testData.ts` generated · every constant mapped to its source Test Case ID(s) · data gaps documented, not fabricated · duplicates removed · shared datasets identified · sensitive data documented.
 
 ## Failure Handling
-If complete test data can't be determined, document the gap, continue with remaining scenarios, and report assumptions to the Agent. Never invent business data that can't be inferred from the application.
+If a test case's `testData` is missing or insufficient for its steps, document the gap, continue with remaining test cases, and report it for the final coverage report. Never invent business data that wasn't supplied and can't be unambiguously inferred from the application.
 
 ## References
-**Knowledge:** framework-rules.md, generation-patterns.md, naming-conventions.md
+**Knowledge:** skills/knowledge/framework-rules.md, skills/knowledge/generation-patterns.md, skills/knowledge/naming-conventions.md, skills/knowledge/test-case-parsing-rules.md
 **Templates:** None
-**Consumed by:** Framework generation, Skill 07 — Framework Validation
+**Consumed by:** Skill 07 — Spec Generation, Skill 08 — Framework Validation

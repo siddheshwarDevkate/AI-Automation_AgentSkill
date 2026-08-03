@@ -1,10 +1,10 @@
 # OUTPUT STRUCTURE
 
 ## Purpose
-Defines the expected structure, organization, and quality of all generated Playwright framework artifacts, so every generated framework follows the same layout and formatting regardless of the AI model. Refer alongside framework-rules.md, framework-architecture.md, and naming-conventions.md.
+Defines the expected structure, organization, and quality of all generated Playwright framework artifacts, so every generated framework follows the same layout and formatting regardless of the AI model. Refer alongside skills/knowledge/framework-rules.md, skills/knowledge/framework-architecture.md, and skills/knowledge/naming-conventions.md.
 
 ## Used By Skills
-01 Application Analysis · 03 Page Object Generation · 04 Spec Generation · 05 Assertion Generation · 06 Test Data Generation · 07 Framework Validation · 08 Framework Review
+01 Test Case Analysis · 02 Application Analysis · 04 Page Object Generation · 05 Assertion Generation · 06 Test Data Generation · 07 Spec Generation · 08 Framework Validation · 09 Test Execution & Self-Healing · 10 Framework Review
 
 ## Objective
 Generate a clean, modular, production-ready framework that's immediately usable with minimal or no manual modification. Generate only the requested artifacts.
@@ -16,6 +16,9 @@ project-root/
 ├── tests/       (login.spec.ts, dashboard.spec.ts, ...)
 ├── utils/       (WaitHelper.ts, TestDataHelper.ts, ...)
 ├── test-data/   (testData.ts)
+├── traceability-report.md  (Test Case ID → Spec test coverage summary)
+├── execution-report.md     (per-browser pass/fail/blocked status, repairs made)
+├── execution-state.md      (running pipeline progress ledger, see agent/agent.md)
 └── README.md
 ```
 Only add folders when explicitly required.
@@ -28,6 +31,9 @@ Imports → Class Declaration → Private Locators → Constructor → Navigatio
 
 ## Test Specification Output Order
 Imports → Test Data → `test.describe()` → `beforeEach()` → Positive Test Cases → Negative Test Cases → Edge Cases (if applicable). Business logic stays inside Page Objects.
+
+## Test Case Traceability Tag
+Every generated test must include its source Test Case ID tag — the exact format is owned by skills/knowledge/naming-conventions.md (NC-303).
 
 ## Utility Output
 Utility classes (WaitHelper, TestDataHelper, DateHelper) contain only reusable functionality — no business logic.
@@ -59,7 +65,7 @@ Navigation → Input → Click → Selection → Verification → Compound Busin
 Generated code should be readable, reusable, modular, maintainable, strongly typed, properly formatted, and easy to extend. Avoid unnecessary complexity.
 
 ## Output Restrictions
-Do not generate `playwright.config.ts`, `package.json`, `tsconfig.json`, `node_modules`, `package-lock.json`, or CI/CD configuration unless explicitly requested.
+Do not generate `playwright.config.ts`, `package.json`, `tsconfig.json`, `node_modules`, `package-lock.json`, or CI/CD configuration unless explicitly requested. **Exception:** Skill 09 (Test Execution & Self-Healing) may generate/update only the `projects` array of `playwright.config.ts` to define the browser matrix.
 
 ## Multiple Page Handling
 One Page Object + one Spec file per logical page or feature. Avoid combining unrelated pages into a single file.
@@ -68,7 +74,7 @@ One Page Object + one Spec file per logical page or feature. Avoid combining unr
 Every generated file should be complete — no incomplete methods, no placeholder implementations unless information is genuinely unavailable, in which case use `// TODO:` rather than fabricating.
 
 ## Validation Before Delivery
-✓ Folder structure correct · ✓ required files generated · ✓ naming conventions followed · ✓ Page Objects complete · ✓ Specs complete · ✓ utilities reusable · ✓ no duplicate code · ✓ framework rules followed · ✓ output is production ready
+✓ Folder structure correct · ✓ required files generated · ✓ naming conventions followed · ✓ Page Objects complete · ✓ Specs complete · ✓ utilities reusable · ✓ no duplicate code · ✓ framework rules followed · ✓ suite executed across the browser matrix · ✓ output is production ready
 
 ## Delivery Format
 Return files in logical order, each with file path, file name, and complete source code, clearly separated:

@@ -1,10 +1,10 @@
 # TYPESCRIPT CODING STANDARDS
 
 ## Purpose
-TypeScript coding standards for generated Playwright automation code — code quality, maintainability, consistency. Refer alongside framework-rules.md, framework-architecture.md, and playwright-best-practices.md.
+TypeScript coding standards for generated Playwright automation code — code quality, maintainability, consistency. Refer alongside skills/knowledge/framework-rules.md, skills/knowledge/framework-architecture.md, and skills/knowledge/playwright-best-practices.md. File/method ordering within a generated file is owned by skills/knowledge/output-structure.md, not repeated here.
 
 ## Used By Skills
-03 Page Object Generation · 07 Framework Validation
+04 Page Object Generation · 08 Framework Validation
 
 ## General Principles
 - **TS-001 — Enable Strong Typing.** e.g. `const username: string = 'standard_user';`.
@@ -51,9 +51,6 @@ import { WaitHelper } from '../utils/WaitHelper';
 ## Error Handling
 - **TS-701 — Fail Fast.** Allow errors to surface naturally; don't suppress exceptions.
 - **TS-702 — Avoid Empty Catch Blocks** — always handle exceptions intentionally.
-
-## File Organization
-Imports → Class Declaration → Private Properties → Constructor → Navigation Methods → Action Methods → Verification Methods → Compound Methods → Helper Methods.
 
 ## Code Style
 - **TS-801 — Consistent Formatting** — consistent indentation and spacing.

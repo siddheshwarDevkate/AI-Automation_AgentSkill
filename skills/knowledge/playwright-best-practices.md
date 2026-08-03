@@ -1,15 +1,16 @@
 # PLAYWRIGHT BEST PRACTICES
 
 ## Purpose
-Playwright-specific best practices for generated automation code. Focuses only on Playwright APIs and recommended usage — refer alongside framework-rules.md, framework-architecture.md, and locator-strategy.md.
+Playwright-specific best practices for generated automation code. Focuses only on Playwright APIs and recommended usage — refer alongside skills/knowledge/framework-rules.md, skills/knowledge/framework-architecture.md, and skills/knowledge/locator-strategy.md.
 
 ## Used By Skills
-02 Locator Generation · 03 Page Object Generation · 05 Assertion Generation · 07 Framework Validation · 08 Framework Review
+03 Locator Generation · 04 Page Object Generation · 05 Assertion Generation · 08 Framework Validation · 09 Test Execution & Self-Healing · 10 Framework Review
 
 ## General Principles
 - **BP-001 — Prefer Playwright Native APIs:** `expect()`, `locator()`, `getByRole()`, `getByLabel()`, `waitFor()`, `toHaveURL()`, `toHaveTitle()`.
 - **BP-002 — Use Auto Waiting.** Playwright auto-waits for actionable elements — don't add unnecessary waits. Correct: `await loginButton.click();`. Incorrect: `await page.waitForTimeout(3000); await loginButton.click();`.
 - **BP-003 — Keep Tests Deterministic.** Avoid depending on timing, execution order, existing app state, or random UI behavior.
+- **BP-004 — Prefer `innerText()` over `textContent()`.** `textContent()` includes hidden text and whitespace noise; `innerText()` reflects rendered, visible text.
 
 ## Locators
 - **BP-101 — Create Once, in the Constructor:**
@@ -22,7 +23,7 @@ constructor(page: Page) {
 ```
 Don't recreate locators inside every method.
 - **BP-102 — Reuse Existing Locators.** One element, one locator — avoid duplicate definitions.
-- **BP-103 — Prefer Accessible Locators.** Order: `getByRole()` → `getByLabel()` → `getByPlaceholder()` → `getByTestId()`. CSS/XPath only when required.
+- **BP-103 — Locator Selection.** Which locator strategy to use for a given element (priority order, validation, special cases) is owned by skills/knowledge/locator-strategy.md — follow it exactly rather than choosing an ad hoc order here.
 
 ## Actions
 - **BP-201 — One Action Per Method:** `fillUsername()`, `fillPassword()`, `clickLoginButton()`. Don't combine unrelated actions.
@@ -38,6 +39,7 @@ Don't recreate locators inside every method.
 - **BP-401 — Never Use Hard Waits** (`page.waitForTimeout()`).
 - **BP-402 — Wait for Expected State:** `await expect(locator).toBeVisible();`, `toHaveText()`, `toHaveURL()`.
 - **BP-403 — Wait Only When Needed.** Playwright already auto-waits; don't add waits after every action.
+- **BP-404 — Fix Flakiness at the Root.** When Skill 09 (Test Execution & Self-Healing) diagnoses a flaky failure, fix the missing/incorrect wait per BP-402 — never "fix" flakiness by adding `page.waitForTimeout()` or by retrying blindly until green.
 
 ## Navigation
 - **BP-501 — Verify Navigation** after important transitions: URL, page title, visible element.
@@ -62,4 +64,4 @@ Don't recreate locators inside every method.
 - **BP-903 — Remove Dead Code** — no unused variables/imports, commented code, or empty methods.
 
 ## Final Checklist
-✓ Playwright APIs used correctly · ✓ no hard waits · ✓ proper assertions · ✓ stable waiting strategy · ✓ clean Page Object methods · ✓ reusable business methods · ✓ meaningful naming · ✓ efficient implementation · ✓ readable code · ✓ no unnecessary complexity
+✓ Playwright APIs used correctly · ✓ no hard waits · ✓ proper assertions · ✓ stable waiting strategy · ✓ clean Page Object methods · ✓ reusable business methods · ✓ meaningful naming · ✓ efficient implementation · ✓ readable code · ✓ no unnecessary complexity · ✓ verified passing across the configured browser matrix
