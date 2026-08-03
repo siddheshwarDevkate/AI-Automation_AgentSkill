@@ -44,6 +44,8 @@ Verify expected Page Objects exist, no duplicates, required business/verificatio
 ## Spec Validation
 Verify required Spec files generated, one test per test case (per the Strict Traceability Rule in Skill 07), no duplicate scenarios beyond what duplicate test cases explicitly require, Page Objects referenced correctly, no inline assertions or hardcoded data literals (everything imported from Page Object methods and `testData.ts`).
 
+**Inline Reusable Logic Check:** Scan each spec file for a reusable/common function defined inline (a data generator, custom wait condition, retry wrapper, or setup/teardown routine used by more than one test or spec) — this violates skills/knowledge/framework-rules.md's RL-01. Flag it and require it be moved to `utils/`, `fixtures/`, or `hooks/` per skills/knowledge/framework-architecture.md's Reusable Logic Placement section before the framework can pass validation.
+
 ## Assertion Validation
 Verify every test case's `expectedResult` has a corresponding assertion, duplicates avoided, business outcomes validated.
 

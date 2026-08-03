@@ -32,11 +32,15 @@ project-root/
 │   ├── WaitHelper.ts
 │   ├── TestDataHelper.ts
 │   └── ...
+├── fixtures/
+│   └── ...   (Playwright test.extend() setup/teardown shared by 2+ spec files — see Reusable Logic Placement)
+├── hooks/
+│   └── ...   (shared beforeEach()/afterEach() routines reused by 2+ spec files — see Reusable Logic Placement)
 ├── test-data/
 │   └── testData.ts
 └── README.md
 ```
-Generate additional folders only if explicitly requested.
+Generate additional folders only if explicitly requested. **Exception:** `fixtures/` and `hooks/` are generated automatically — without a separate explicit request — the first time Spec Generation (Skill 07) needs to extract reusable setup/teardown logic out of a spec file, per Reusable Logic Placement below. Never scaffold either folder empty.
 
 ## Page Object Architecture
 Every application page gets its own Page Object (e.g. `LoginPage.ts`, `DashboardPage.ts`, `ProfilePage.ts`, `SettingsPage.ts`). Never combine multiple pages into one class.
@@ -75,6 +79,14 @@ Organize by feature: `tests/login.spec.ts`, `dashboard.spec.ts`, `search.spec.ts
 ## Utilities
 Utility classes (e.g. `WaitHelper`, `TestDataHelper`) contain only reusable helper logic — never business logic.
 
+## Reusable Logic Placement (Critical)
+A Spec file (`*.spec.ts`) may only contain: imports, `test.describe()`/`beforeEach()`/`afterEach()` wiring, and calls into Page Object methods, `test-data/testData.ts` constants, and `fixtures/`/`hooks/`. **A reusable/common function must never be defined inline inside a spec file** — no data generator, custom wait condition, retry wrapper, or shared setup/teardown routine written directly in `*.spec.ts`. If the same logic is needed by more than one test — including across different spec files — extract it instead of copy-pasting it:
+- **Generic helper logic with no Playwright test-lifecycle dependency** (date formatting, random data generation, string/number utilities, custom wait conditions) → `utils/`, per Utilities above.
+- **Reusable Playwright setup/teardown shared by two or more spec files** (an authenticated page, a seeded API client, a pre-provisioned record) → a custom fixture in `fixtures/`, composed via `test.extend()`.
+- **Reusable `beforeEach()`/`afterEach()` routine shared by two or more spec files** that isn't naturally expressed as a fixture (e.g. a common cleanup step, a shared login-before-every-test call) → an importable function in `hooks/`, invoked from each spec's `beforeEach()`/`afterEach()`.
+
+A helper used by exactly one spec file, with no expectation of reuse, may remain a private function in that file — this rule targets duplicated/shared logic, not every local function. Once a second spec needs the same logic, extract it. See skills/knowledge/framework-rules.md's Reusable Logic Rules (RL-01–RL-04) for the enforcement statement, and skills/knowledge/naming-conventions.md for `fixtures/`/`hooks/` file naming.
+
 ## Test Data
 Store reusable test data separately; avoid hardcoding values throughout the framework.
 
@@ -97,4 +109,4 @@ Which files may or may not be generated (config files, CI/CD, the Skill 09 `play
 The framework is not considered complete once code is generated — Skill 09 executes the full suite across the browser matrix and repairs framework-side failures before Skill 10 makes the final production-readiness call. See skills/knowledge/framework-rules.md's Execution & Self-Healing Rules and skills/skill-09-test-execution-self-healing.md for the full workflow.
 
 ## Validation Checklist
-✓ Folder structure correct · ✓ every page has its own Page Object · ✓ Page Object count equals the Page Inventory count (no one-per-component/pattern Page Objects) · ✓ BasePage used correctly · ✓ tests contain business scenarios · ✓ utilities contain only reusable logic · ✓ no duplicate responsibilities · ✓ architecture follows POM · ✓ suite executed across the browser matrix before readiness is declared
+✓ Folder structure correct · ✓ every page has its own Page Object · ✓ Page Object count equals the Page Inventory count (no one-per-component/pattern Page Objects) · ✓ BasePage used correctly · ✓ tests contain business scenarios · ✓ utilities contain only reusable logic · ✓ no reusable/common function defined inline inside a spec file (extracted to utils/fixtures/hooks per Reusable Logic Placement) · ✓ no duplicate responsibilities · ✓ architecture follows POM · ✓ suite executed across the browser matrix, capped at 2 concurrent workers, before readiness is declared

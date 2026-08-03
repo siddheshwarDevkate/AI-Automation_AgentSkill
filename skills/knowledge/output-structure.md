@@ -15,16 +15,18 @@ project-root/
 ├── pages/       (BasePage.ts, LoginPage.ts, DashboardPage.ts, ...)
 ├── tests/       (login.spec.ts, dashboard.spec.ts, ...)
 ├── utils/       (WaitHelper.ts, TestDataHelper.ts, ...)
+├── fixtures/    (test.extend() setup/teardown shared by 2+ specs — generated only when needed)
+├── hooks/       (shared beforeEach()/afterEach() routines reused by 2+ specs — generated only when needed)
 ├── test-data/   (testData.ts)
 ├── traceability-report.md  (Test Case ID → Spec test coverage summary)
 ├── execution-report.md     (per-browser pass/fail/blocked status, repairs made)
 ├── execution-state.md      (running pipeline progress ledger, see agent/agent.md)
 └── README.md
 ```
-Only add folders when explicitly required.
+Only add folders when explicitly required. **Exception:** `fixtures/` and `hooks/` are added automatically, without a separate explicit request, the first time reusable setup/teardown logic needs extracting out of a spec file — see skills/knowledge/framework-architecture.md's Reusable Logic Placement section. Never scaffold either one empty.
 
 ## File Generation Order
-BasePage → Page Objects → Utilities → Test Data → Test Specifications. Never generate test files before their required Page Objects exist.
+BasePage → Page Objects → Utilities → Test Data → Test Specifications. Never generate test files before their required Page Objects exist. `fixtures/`/`hooks/` files are produced alongside Test Specifications, only at the point Spec Generation (Skill 07) identifies logic that two or more spec files need to share — never generated speculatively ahead of that need.
 
 ## Page Object Output Order
 Imports → Class Declaration → Private Locators → Constructor → Navigation Methods → Action Methods → Verification Methods → Compound Business Methods → Helper Methods (if required). Maintain this order consistently across every file.
@@ -74,7 +76,7 @@ One Page Object + one Spec file per logical page or feature. Avoid combining unr
 Every generated file should be complete — no incomplete methods, no placeholder implementations unless information is genuinely unavailable, in which case use `// TODO:` rather than fabricating.
 
 ## Validation Before Delivery
-✓ Folder structure correct · ✓ required files generated · ✓ naming conventions followed · ✓ Page Objects complete · ✓ Specs complete · ✓ utilities reusable · ✓ no duplicate code · ✓ framework rules followed · ✓ suite executed across the browser matrix · ✓ output is production ready
+✓ Folder structure correct · ✓ required files generated · ✓ naming conventions followed · ✓ Page Objects complete · ✓ Specs complete · ✓ utilities reusable · ✓ no reusable/common function left inline inside a spec file · ✓ no duplicate code · ✓ framework rules followed · ✓ suite executed across the browser matrix at a 2-worker concurrency cap · ✓ output is production ready
 
 ## Delivery Format
 Return files in logical order, each with file path, file name, and complete source code, clearly separated:

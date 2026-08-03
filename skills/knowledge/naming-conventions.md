@@ -15,6 +15,8 @@ Consistent naming conventions for all generated Playwright framework artifacts, 
 - **NC-101 Page Object Files:** `<PageName>Page.ts` — e.g. `LoginPage.ts`, `DashboardPage.ts`, `SearchPage.ts`, `ProfilePage.ts`. `<PageName>` must come from a Page Inventory entry (skills/knowledge/framework-architecture.md's Page Identity Test) — never from a UI pattern or feature name. `DataTablePage.ts`, `ColumnSelectionPage.ts`, and `FreeTextPage.ts` are not valid names; those belong on the Page Object of whatever real page they appear on.
 - **NC-102 Test Files:** `<feature>.spec.ts` — e.g. `login.spec.ts`, `dashboard.spec.ts`, `search.spec.ts`, `profile.spec.ts`.
 - **NC-103 Utility Files:** `<Feature>Helper.ts` — e.g. `WaitHelper.ts`, `TestDataHelper.ts`, `DateHelper.ts`.
+- **NC-104 Fixture Files:** `<name>.fixture.ts` — e.g. `auth.fixture.ts`, `apiClient.fixture.ts`. Export shared setup/teardown via `test.extend()`; see skills/knowledge/framework-architecture.md's Reusable Logic Placement section.
+- **NC-105 Hook Files:** `<name>Hooks.ts` — e.g. `loginHooks.ts`, `cleanupHooks.ts`. Export plain functions called from a spec's `beforeEach()`/`afterEach()`.
 
 ## Page Object Naming
 - **NC-201 Locator Variables:** `<elementName>Locator` — e.g. `usernameInputLocator`, `passwordInputLocator`, `loginButtonLocator`, `errorMessageLocator`.
@@ -36,7 +38,7 @@ Consistent naming conventions for all generated Playwright framework artifacts, 
 - **NC-403 Booleans:** meaningful prefixes — `isLoggedIn`, `isVisible`, `hasPermission`, `canEdit`.
 
 ## Folder Naming
-Lowercase — `pages`, `tests`, `utils`, `test-data`. Not `Pages`, `TestFiles`, `Utilities`.
+Lowercase — `pages`, `tests`, `utils`, `fixtures`, `hooks`, `test-data`. Not `Pages`, `TestFiles`, `Utilities`.
 
 ## Consistency Rule
 Use the same naming pattern throughout the framework. Correct: `LoginPage`, `DashboardPage`, `ProfilePage`. Incorrect (mixed styles): `LoginPage`, `dashboard_page`, `PROFILEPAGE`.

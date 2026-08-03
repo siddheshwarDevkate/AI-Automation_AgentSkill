@@ -48,7 +48,14 @@ Waiting strategy, assertion style, action/verification method shape, and test st
 Typing, imports, class/method design, variable naming, comments, and async patterns are owned entirely by skills/knowledge/typescript-coding-standards.md — follow it exactly.
 
 ## Spec File Rules
-Spec files must comply with **POM-02** (interact only through public Page Object methods — never access a locator or assert directly on one), skills/knowledge/playwright-best-practices.md's Test Structure section (Arrange → Act → Assert, test independence, grouping), and skills/knowledge/naming-conventions.md's Test Naming rules (NC-301–NC-303, including the mandatory Test Case ID tag). Business logic and assertions never live inside a Spec file.
+Spec files must comply with **POM-02** (interact only through public Page Object methods — never access a locator or assert directly on one), skills/knowledge/playwright-best-practices.md's Test Structure section (Arrange → Act → Assert, test independence, grouping), skills/knowledge/naming-conventions.md's Test Naming rules (NC-301–NC-303, including the mandatory Test Case ID tag), and the Reusable Logic Rules below. Business logic and assertions never live inside a Spec file.
+
+## Reusable Logic Rules
+Where common/reusable logic belongs is owned by skills/knowledge/framework-architecture.md's Reusable Logic Placement section — follow it exactly. This document's enforcement:
+- **RL-01:** A Spec file never defines a reusable/common function inline — no data generators, custom wait conditions, retry wrappers, or shared setup/teardown routines written directly in a `*.spec.ts` file.
+- **RL-02:** Generic, test-lifecycle-independent helpers (formatting, random data, string/number utilities) go in `utils/`. Playwright `test.extend()` setup/teardown shared by two or more spec files goes in `fixtures/`. Shared `beforeEach()`/`afterEach()` routines reused by two or more spec files go in `hooks/`.
+- **RL-03:** `fixtures/` and `hooks/` are generated only once there is actual reusable logic to place in them — never scaffolded empty.
+- **RL-04:** A helper used by exactly one spec file, with no expectation of reuse, may stay local to that file — this rule targets duplicated/shared logic, not every local function.
 
 ## Execution & Self-Healing Rules
 - **EX-01:** Run the full generated suite across the resolved browser matrix (user-specified → project-configured → Chromium/Firefox/WebKit default; see skills/skill-09-test-execution-self-healing.md's Browser Matrix) before any readiness decision is made.
@@ -57,6 +64,7 @@ Spec files must comply with **POM-02** (interact only through public Page Object
 - **EX-04:** Never repair by weakening an assertion, altering test data to hide a failure, or suppressing an exception — see Critical Rule 8.
 - **EX-05:** Cap repair attempts at 3 per test case per browser. Beyond that, mark the case "Blocked — Manual Review Required" and continue.
 - **EX-06:** A genuine application defect (actual behaviour contradicts the source test case's `expectedResult`) is documented, never silently forced to pass.
+- **EX-07:** Cap execution concurrency at 2 workers (2 browser instances running at once), independent of how many browsers are in the resolved matrix — see skills/skill-09-test-execution-self-healing.md's Execution Concurrency rule. Never fan a run or a repair out to more concurrent browser instances than this to go faster.
 
 ## Output Rules
 Which files may or may not be generated (including the `playwright.config.ts` restriction and Skill 09's narrow exception) is owned entirely by skills/knowledge/output-structure.md's Output Restrictions section — follow it exactly. Do not overwrite existing files unless instructed. Do not modify unrelated code.

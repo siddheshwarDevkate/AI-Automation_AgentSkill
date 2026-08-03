@@ -23,6 +23,7 @@ Every parsed test case (per Skill 01's Test Case Model) produces exactly one spe
 - Generate exactly one test per test case, tagged with its `id`
 - Reuse Page Object action/verification methods (Skills 04–05) and data constants (Skill 06) — never define new ones here
 - Flag any test case that cannot be automated (missing Page Object method, verification method, or data constant) instead of fabricating a workaround
+- Never define a reusable/common function inline inside a spec file — extract data generators, custom waits, or setup/teardown logic shared by two or more specs into `utils/`, `fixtures/`, or `hooks/` per skills/knowledge/framework-architecture.md's Reusable Logic Placement section (see also skills/knowledge/framework-rules.md's RL-01–RL-04)
 - Generate the actual Spec files per skills/templates/spec-template.md
 
 ## Workflow
@@ -52,7 +53,7 @@ Test cases are the source of truth, so duplicates should already be resolved in 
 Before completing, verify every parsed test case maps to exactly one generated test or is explicitly recorded as "Not Automated." Coverage is measured against the Test Case Model, not against discovered application functionality.
 
 ## Success Criteria
-Every test case mapped to a Spec file · one test generated per test case · every generated test tagged with its source `id` · every test calls only pre-existing Page Object methods and pre-existing data constants (no inline assertions, no hardcoded literals) · unautomatable test cases documented, not fabricated · Spec files generated.
+Every test case mapped to a Spec file · one test generated per test case · every generated test tagged with its source `id` · every test calls only pre-existing Page Object methods and pre-existing data constants (no inline assertions, no hardcoded literals) · no reusable/common function defined inline inside a spec file (extracted to `utils/`/`fixtures/`/`hooks/` instead) · unautomatable test cases documented, not fabricated · Spec files generated.
 
 ## Failure Handling
 If a test case can't be automated, document it as "Not Automated" with the reason and continue with the rest. Never invent a scenario, step, Page Object behaviour, verification method, or data value to force a test case through.
