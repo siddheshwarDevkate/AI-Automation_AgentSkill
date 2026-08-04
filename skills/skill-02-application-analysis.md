@@ -4,8 +4,7 @@
 Analyze the target application, guided by the Test Case Model produced by Skill 01, to build the understanding required to automate exactly the scenarios the test cases define. Focuses on business/user understanding only — does NOT generate locators, Page Objects, or test scripts.
 
 ## Execution Dependencies
-**Knowledge:** skills/knowledge/framework-architecture.md, skills/knowledge/framework-rules.md, skills/knowledge/generation-patterns.md, skills/knowledge/output-structure.md
-**Templates:** None
+Load the Knowledge files listed for Skill 02 in agent/agent.md's **Skill Dependency Matrix** — that table is the single source of truth and is deliberately not restated here. This Skill uses no Template.
 
 ## Inputs
 Required: Test Case Model (from Skill 01), Application URL, login credentials, browser automation session.
@@ -81,7 +80,5 @@ Test Case Model read · every referenced workflow/page visited and confirmed rea
 ## Failure Handling
 Stop analysis if the application cannot be accessed, login fails, a required page cannot be reached, or browser automation fails. If a test case references a workflow or page that does not exist in the application, document it as a Test Case Discrepancy and mark that test case as blocked rather than fabricating a substitute. Report the issue to the Agent — never continue with incomplete analysis.
 
-## References
-**Knowledge:** skills/knowledge/framework-architecture.md, skills/knowledge/framework-rules.md, skills/knowledge/generation-patterns.md, skills/knowledge/output-structure.md
-**Templates:** None
-**Consumed by:** Skill 03 — Locator Generation
+## Consumed By
+Skill 03 — Locator Generation

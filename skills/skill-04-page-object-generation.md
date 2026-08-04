@@ -4,8 +4,7 @@
 Generate production-ready Playwright Page Objects using the Application Analysis Report and Locator Map. Exposes business operations through public methods while encapsulating implementation details. Does NOT generate Spec files, test data, or assertions in test files.
 
 ## Execution Dependencies
-**Knowledge:** skills/knowledge/framework-rules.md, skills/knowledge/playwright-best-practices.md, skills/knowledge/typescript-coding-standards.md, skills/knowledge/naming-conventions.md, skills/knowledge/generation-patterns.md, skills/knowledge/output-structure.md
-**Templates:** skills/templates/page-object-template.md
+Load the Knowledge files and Template listed for Skill 04 in agent/agent.md's **Skill Dependency Matrix** — that table is the single source of truth and is deliberately not restated here.
 
 ## Inputs
 Required: Application Analysis Report (including its Page Inventory), Locator Map.
@@ -83,7 +82,5 @@ Before completing each Page Object verify: correct class structure, complete con
 ## Failure Handling
 If generation fails, document the issue, preserve generated code, add TODOs where required, and continue with remaining Page Objects. Never fabricate missing implementation.
 
-## References
-**Knowledge:** skills/knowledge/framework-rules.md, skills/knowledge/playwright-best-practices.md, skills/knowledge/typescript-coding-standards.md, skills/knowledge/naming-conventions.md, skills/knowledge/generation-patterns.md
-**Templates:** skills/templates/page-object-template.md
-**Consumed by:** Skill 05 — Assertion Generation (immediately next; extends these same files), later read by Skill 07 — Spec Generation
+## Consumed By
+Skill 05 — Assertion Generation (immediately next; extends these same files) · later read by Skill 07 — Spec Generation

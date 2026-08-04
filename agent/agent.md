@@ -24,7 +24,7 @@ compressed version — if you retain nothing else, retain this.**
 methods and *imports* data constants. Both must already exist when it runs, or
 it will invent them — which is forbidden.
 
-## The 6 rules that must never be violated
+## The 7 rules that must never be violated
 
 1. **No Test Case file, no generation.** Skill 01 is a hard gate.
 2. **One Page Object per REAL page** (Page Inventory entry) — never one per UI
@@ -35,9 +35,12 @@ it will invent them — which is forbidden.
 4. **Never fabricate anything** — locator, scenario, data value, assertion —
    that isn't grounded in the Test Case file or the live application.
 5. **Code is not "done" until Skill 09 ran it and it passed** on every browser
-   in the matrix. Static generation is not verification.
+   in the matrix. Static generation is not verification. If a repair changed
+   code, Skill 08 re-runs before Skill 10 sees the result.
 6. **Never repair a failing test by weakening it** (loosened assertion, altered
    data, swallowed exception). A real application bug is reported, never hidden.
+7. **Data that creates state needs unique values and teardown**, decided at
+   generation time — not patched after a collision at execution time.
 
 ## Where everything lives
 
@@ -98,8 +101,10 @@ downstream artifact.**
 unavailable: request it, or skip the affected step with an explanation.
 
 **AP-005 — Respect project standards.** Every artifact must comply with all
-files in `skills/knowledge/`. Each Skill declares which ones it needs in its own
-**Execution Dependencies** header — load those, not all nine, per Skill.
+files in `skills/knowledge/`. **The Skill Dependency Matrix below is the single
+source of truth for which ones each Skill loads** — read that row, load exactly
+those files, and do not load all ten per Skill. Skill files do not restate their
+own dependency lists.
 
 **AP-006 — The live application is the source of truth for HOW.** Base decisions
 on actual application behaviour, never assumptions.
@@ -195,15 +200,58 @@ maintainable and reusable · **trace every test to a supplied Test Case** ·
 08 Framework Validation          → Validation Report + Traceability Matrix
         ↓
 09 Test Execution & Self-Healing → Execution Report   ⟲ may repair 03/04/05/06/07
-        ↓
+        ↓                                             ⟲ re-invokes 08 if it repaired code
 10 Framework Review              → Production-readiness decision
 ```
+
+**The 09 → 08 re-validation gate is mandatory, not optional.** If any repair
+modified generated code, Skill 09 re-invokes Skill 08 before producing its
+Execution Report, so Skill 10 reviews the framework as it actually stands rather
+than as it existed before the repairs. See EX-08 in
+skills/knowledge/framework-rules.md.
 
 Each Skill's full definition — purpose, inputs, workflow, success criteria —
 lives in its own file (see Reference Index). **Read the Skill file; this Agent
 does not restate its contents.**
 
-## Execution rules
+---
+
+# ==============================================================================
+# SKILL DEPENDENCY MATRIX
+# ==============================================================================
+
+**This table is the single source of truth for what each Skill loads.** Skill
+files, Knowledge files, and Templates deliberately do NOT restate it — a second
+copy is how the two lists drift apart. When a Skill starts, read its row here and
+load exactly those files.
+
+Paths are abbreviated: Knowledge entries live in `skills/knowledge/<name>.md`,
+Templates in `skills/templates/<name>.md`.
+
+| # | Skill | Knowledge to load | Template |
+|---|---|---|---|
+| 01 | Test Case Analysis | test-case-parsing-rules · framework-rules · framework-architecture · output-structure | — |
+| 02 | Application Analysis | framework-architecture · framework-rules · generation-patterns · output-structure | — |
+| 03 | Locator Generation | locator-strategy · framework-rules · playwright-best-practices · naming-conventions · generation-patterns | — |
+| 04 | Page Object Generation | framework-architecture · framework-rules · playwright-best-practices · typescript-coding-standards · naming-conventions · generation-patterns · output-structure | page-object-template |
+| 05 | Assertion Generation | framework-architecture · framework-rules · playwright-best-practices · typescript-coding-standards · naming-conventions · generation-patterns · output-structure · test-case-parsing-rules | verification-template |
+| 06 | Test Data Generation | test-data-lifecycle · framework-rules · typescript-coding-standards · naming-conventions · generation-patterns · output-structure · test-case-parsing-rules | — |
+| 07 | Spec Generation | framework-architecture · framework-rules · playwright-best-practices · typescript-coding-standards · naming-conventions · generation-patterns · output-structure · test-case-parsing-rules · test-data-lifecycle | spec-template |
+| 08 | Framework Validation | **all ten** (validates against every standard) | framework-output-template |
+| 09 | Test Execution & Self-Healing | test-data-lifecycle · framework-rules · playwright-best-practices · locator-strategy · typescript-coding-standards · naming-conventions · generation-patterns · output-structure · test-case-parsing-rules | — |
+| 10 | Framework Review | framework-architecture · framework-rules · playwright-best-practices · naming-conventions · generation-patterns · output-structure | framework-output-template |
+
+**Maintaining this table.** When a rule moves between files, or a new Knowledge
+file is added, update this table in the same edit — it is the only place the
+mapping exists, so a missed update here is the only way a Skill can end up
+generating against a standard it never read. A Skill that finds itself needing a
+file its row doesn't list should report that gap rather than silently loading it.
+
+---
+
+# ==============================================================================
+# SKILL EXECUTION RULES
+# ==============================================================================
 
 - **Always complete the current Skill before invoking the next.** Never run
   dependent Skills simultaneously.
@@ -211,9 +259,11 @@ does not restate its contents.**
   succeeds.
 - **Exception — bounded repair loops.** Skill 09 may re-invoke Skills 03, 04,
   05, 06, or 07 to repair a specific failing artifact, per its Repair Routing
-  table. **This is the only sanctioned backward invocation.** It must be scoped
-  to the affected artifact only, bounded by Skill 09's retry budget (3 attempts
-  per test case per browser), and must never route around AP-010.
+  table, and must re-invoke Skill 08 afterwards if any repair modified code (its
+  Re-Validation Gate). **These are the only sanctioned backward invocations.**
+  Repairs must be scoped to the affected artifact only, bounded by Skill 09's
+  retry budget (3 attempts per test case per browser), and must never route
+  around AP-010.
 - Validate after every completed Skill — **do not wait until the end.** Early
   validation stops invalid context propagating downstream.
 
@@ -250,6 +300,7 @@ Total: N · Automated: N · Not Automated: N (list ID + reason)
 
 ## Execution Results (after Skill 09)
 Verified Passing: N/N · Blocked: N (ID + reason) · App Defects: N (ID + reason)
+Re-Validation Gate: not needed (no code modified) | ran — N findings, N fixed
 ```
 
 **Update points:** Page Inventory after Skill 02 · Page Object Count Check after
@@ -370,10 +421,13 @@ partial results unless the user explicitly asked for them.
 **Coverage & verification**
 - ✓ Every test case is automated **or** explicitly documented as not automated
 - ✓ Test Case Traceability Matrix complete
-- ✓ **Suite executed across the resolved browser matrix**
+- ✓ **Suite executed across the resolved browser matrix**, capped at 2 workers
 - ✓ **Every failure diagnosed before any repair attempt**
 - ✓ Repairs scoped correctly and within the retry budget
 - ✓ **No repair violated AP-010** — no weakened assertions, no altered data
+- ✓ **Re-Validation Gate ran if any repair modified code**, and Skill 10 read the
+  post-repair Validation Report
+- ✓ Every state-creating/mutating test case has unique data or teardown
 - ✓ Application defects documented, never masked
 
 **Delivery**
@@ -406,7 +460,8 @@ skills/skill-09-test-execution-self-healing.md
 skills/skill-10-framework-review.md
 ```
 
-**Knowledge** — each Skill loads only what its Execution Dependencies header lists
+**Knowledge** — what each file owns. **Which Skill loads which is decided
+exclusively by the Skill Dependency Matrix above, not by this list.**
 
 ```
 skills/knowledge/test-case-parsing-rules.md      TC file → Test Case Model
@@ -417,10 +472,11 @@ skills/knowledge/locator-strategy.md             locator priority & validation
 skills/knowledge/naming-conventions.md           all naming rules
 skills/knowledge/output-structure.md             file layout & output order
 skills/knowledge/playwright-best-practices.md    Playwright API usage
+skills/knowledge/test-data-lifecycle.md          unique data, teardown, isolation
 skills/knowledge/typescript-coding-standards.md  TS quality standards
 ```
 
-**Templates** — each Skill's Templates header names the one it applies
+**Templates** — assignment is likewise owned by the Skill Dependency Matrix
 
 ```
 skills/templates/page-object-template.md      → Skill 04 (+05 appends)

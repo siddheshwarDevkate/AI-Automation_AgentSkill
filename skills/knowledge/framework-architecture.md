@@ -3,8 +3,8 @@
 ## Purpose
 Defines the target Playwright framework architecture: folder structure, responsibilities, dependencies, and design principles. Coding/implementation standards live in skills/knowledge/framework-rules.md — this file governs structure only.
 
-## Used By Skills
-01 Test Case Analysis · 02 Application Analysis · 08 Framework Validation · 10 Framework Review
+## Dependency Matrix
+Which Skills load this file is declared in agent/agent.md's Skill Dependency Matrix — that table is the single source of truth.
 
 ## Objective
 Generate a clean, modular, scalable, production-ready Playwright automation framework based on the Page Object Model (POM).
@@ -84,8 +84,9 @@ A Spec file (`*.spec.ts`) may only contain: imports, `test.describe()`/`beforeEa
 - **Generic helper logic with no Playwright test-lifecycle dependency** (date formatting, random data generation, string/number utilities, custom wait conditions) → `utils/`, per Utilities above.
 - **Reusable Playwright setup/teardown shared by two or more spec files** (an authenticated page, a seeded API client, a pre-provisioned record) → a custom fixture in `fixtures/`, composed via `test.extend()`.
 - **Reusable `beforeEach()`/`afterEach()` routine shared by two or more spec files** that isn't naturally expressed as a fixture (e.g. a common cleanup step, a shared login-before-every-test call) → an importable function in `hooks/`, invoked from each spec's `beforeEach()`/`afterEach()`.
+- **Reusable Page Object action/verification logic used by two or more Page Objects** (not spec-level) → `BasePage`, per the BasePage section above — the Page Object layer's home for shared logic, never duplicated across individual `*Page.ts` classes.
 
-A helper used by exactly one spec file, with no expectation of reuse, may remain a private function in that file — this rule targets duplicated/shared logic, not every local function. Once a second spec needs the same logic, extract it. See skills/knowledge/framework-rules.md's Reusable Logic Rules (RL-01–RL-04) for the enforcement statement, and skills/knowledge/naming-conventions.md for `fixtures/`/`hooks/` file naming.
+Together, `utils/`, `fixtures/`, `hooks/`, and `BasePage` are the framework's four homes for reusable logic. A helper used by exactly one spec file, with no expectation of reuse, may remain a private function in that file — this rule targets duplicated/shared logic, not every local function. Once a second spec needs the same logic, extract it. See skills/knowledge/framework-rules.md's Reusable Logic Rules (RL-01–RL-04) for the enforcement statement, and skills/knowledge/naming-conventions.md for `fixtures/`/`hooks/` file naming.
 
 ## Test Data
 Store reusable test data separately; avoid hardcoding values throughout the framework.

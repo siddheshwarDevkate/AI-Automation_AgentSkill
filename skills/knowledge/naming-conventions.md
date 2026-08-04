@@ -3,8 +3,8 @@
 ## Purpose
 Consistent naming conventions for all generated Playwright framework artifacts, to improve readability, maintainability, and predictability.
 
-## Used By Skills
-03 Locator Generation · 04 Page Object Generation · 06 Test Data Generation · 07 Spec Generation · 08 Framework Validation · 10 Framework Review
+## Dependency Matrix
+Which Skills load this file is declared in agent/agent.md's Skill Dependency Matrix — that table is the single source of truth.
 
 ## General Principles
 - **NC-001 — PascalCase for Classes:** `LoginPage`, `DashboardPage`, `ProfilePage`, `BasePage`, `WaitHelper`, `TestDataHelper`. Not `loginPage`, `login_page`, `LOGINPAGE`.

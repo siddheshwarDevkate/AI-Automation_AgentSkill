@@ -3,8 +3,8 @@
 ## Purpose
 Playwright-specific best practices for generated automation code. Focuses only on Playwright APIs and recommended usage — refer alongside skills/knowledge/framework-rules.md, skills/knowledge/framework-architecture.md, and skills/knowledge/locator-strategy.md.
 
-## Used By Skills
-03 Locator Generation · 04 Page Object Generation · 05 Assertion Generation · 08 Framework Validation · 09 Test Execution & Self-Healing · 10 Framework Review
+## Dependency Matrix
+Which Skills load this file is declared in agent/agent.md's Skill Dependency Matrix — that table is the single source of truth.
 
 ## General Principles
 - **BP-001 — Prefer Playwright Native APIs:** `expect()`, `locator()`, `getByRole()`, `getByLabel()`, `waitFor()`, `toHaveURL()`, `toHaveTitle()`.

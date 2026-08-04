@@ -4,8 +4,7 @@
 Analyze the application's DOM and generate stable, maintainable, reusable locators. Responsible only for locator generation — does NOT generate Page Objects, test scripts, or assertions.
 
 ## Execution Dependencies
-**Knowledge:** skills/knowledge/framework-rules.md, skills/knowledge/locator-strategy.md, skills/knowledge/playwright-best-practices.md, skills/knowledge/naming-conventions.md, skills/knowledge/generation-patterns.md
-**Templates:** None
+Load the Knowledge files listed for Skill 03 in agent/agent.md's **Skill Dependency Matrix** — that table is the single source of truth and is deliberately not restated here. This Skill uses no Template.
 
 ## Inputs
 Required: Application Analysis Report, Live Application, Browser Automation Session (Playwright MCP).
@@ -56,7 +55,5 @@ Every page inspected · interactive elements identified · stable locators selec
 ## Failure Handling
 Stop if the DOM cannot be inspected, a required page is inaccessible, browser automation fails, or a stable locator cannot be identified. If an element cannot be located, do not fabricate a locator — document the issue, add a TODO, and continue with remaining elements.
 
-## References
-**Knowledge:** skills/knowledge/framework-rules.md, skills/knowledge/locator-strategy.md, skills/knowledge/playwright-best-practices.md, skills/knowledge/generation-patterns.md
-**Templates:** None
-**Consumed by:** Skill 04 — Page Object Generation
+## Consumed By
+Skill 04 — Page Object Generation

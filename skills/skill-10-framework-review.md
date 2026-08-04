@@ -4,12 +4,13 @@
 Perform the final architectural and quality review of the generated framework, including final sign-off on Test Case coverage AND actual execution results. Acts as the final quality gate and determines production readiness. Does NOT generate or modify framework code.
 
 ## Execution Dependencies
-**Knowledge:** skills/knowledge/framework-architecture.md, skills/knowledge/framework-rules.md, skills/knowledge/generation-patterns.md, skills/knowledge/output-structure.md, skills/knowledge/playwright-best-practices.md
-**Templates:** skills/templates/framework-output-template.md
+Load the Knowledge files and Template listed for Skill 10 in agent/agent.md's **Skill Dependency Matrix** — that table is the single source of truth and is deliberately not restated here.
 
 ## Inputs
-Required: Generated Framework, Validation Report (including the Test Case Traceability Matrix), Execution Report (from Skill 09, including per-browser pass/fail/blocked status), user requirements, project standards.
+Required: Generated Framework, Validation Report (including the Test Case Traceability Matrix), Execution Report (from Skill 09, including per-browser pass/fail/blocked status and Re-Validation Gate outcome), user requirements, project standards.
 Optional: existing framework, previous review reports.
+
+**Use the post-repair Validation Report.** If Skill 09 repaired code, its Re-Validation Gate produced a replacement Validation Report describing the framework as it now stands. Read that one. If the Execution Report shows repairs modified code but records no Re-Validation Gate outcome, the gate was skipped — treat that as missing evidence per Execution Results Review below, not as a pass.
 
 ## Expected Output
 - `README.md` (generated if it doesn't already exist — see README Generation below)
@@ -43,8 +44,9 @@ This is the decisive input Skill 08's static validation cannot provide: whether 
 - Every automated test case has a final per-browser status: **Verified Passing**, **Blocked — Manual Review Required**, or **Application Defect**.
 - Every repair Skill 09 performed was scoped correctly (no assertion weakened, no test data altered to mask a real failure — per the Strict Repair Rule in skills/skill-09-test-execution-self-healing.md).
 - No test is reported as passing without having actually been executed across the full browser matrix.
+- **The Re-Validation Gate ran if any repair modified code**, and its findings were resolved or documented. A repaired framework reviewed only against its pre-repair Validation Report has not actually been validated in its delivered state.
 
-A framework whose tests were generated but never executed, or whose failures were "fixed" by weakening assertions, must never be marked Production Ready — this Skill exists specifically to catch that.
+A framework whose tests were generated but never executed, whose failures were "fixed" by weakening assertions, or whose repairs were never re-validated, must never be marked Production Ready — this Skill exists specifically to catch that.
 
 ## Architecture Review
 Verify clear separation of responsibilities, logical folder structure, consistent organization, proper dependency flow, modular implementation.
@@ -69,7 +71,7 @@ Choose one, weighted primarily by the Execution Summary:
 - **Production Ready** — all automated test cases Verified Passing across the full browser matrix, no unresolved framework defects.
 - **Production Ready with Minor Improvements** — all automated test cases Verified Passing, but with non-blocking maintainability/style recommendations, or a small number of "Not Automated" cases with legitimate (e.g. app doesn't support it) reasons.
 - **Requires Review Before Production** — one or more test cases Blocked or flagged as an Application Defect; needs human review before shipping.
-- **Not Ready for Production** — significant execution failures, broken traceability, or repairs that violated the Strict Repair Rule.
+- **Not Ready for Production** — significant execution failures, broken traceability, repairs that violated the Strict Repair Rule, or code-modifying repairs that were never re-validated.
 
 Always state the decision alongside both the Test Case coverage and Execution Summary numbers, e.g. "18 of 20 test cases automated; 17 of 18 Verified Passing on Chromium/Firefox/WebKit; 1 Blocked (TC-014, see Execution Report)."
 
@@ -79,7 +81,5 @@ Framework reviewed · Validation Report assessed · Execution Report assessed ·
 ## Failure Handling
 If the review can't be completed, document the limitation, report unavailable information, and complete the review using only verified artifacts. Never approve a framework without sufficient evidence, never report full coverage without confirming it against the Test Case Traceability Matrix, and never report "Production Ready" without confirming actual passing execution results from Skill 09.
 
-## References
-**Knowledge:** skills/knowledge/framework-rules.md, skills/knowledge/framework-architecture.md, skills/knowledge/generation-patterns.md, skills/knowledge/naming-conventions.md
-**Templates:** skills/templates/framework-output-template.md
-**Consumed by:** Agent — final delivery decision
+## Consumed By
+Agent — final delivery decision

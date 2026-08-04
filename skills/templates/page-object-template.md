@@ -3,8 +3,8 @@
 ## Purpose
 The standard structure for generating Playwright Page Objects, ensuring consistency, readability, and maintainability. Refer to skills/knowledge/framework-rules.md, skills/knowledge/framework-architecture.md, skills/knowledge/naming-conventions.md, skills/knowledge/typescript-coding-standards.md, and skills/knowledge/playwright-best-practices.md alongside this file.
 
-## Used By Skills
-04 Page Object Generation (creates the files) · 05 Assertion Generation (appends verification methods to the same files — see Verification Methods below)
+## Dependency Matrix
+Template assignment is declared in agent/agent.md's Skill Dependency Matrix — that table is the single source of truth. Skill 04 creates these files; Skill 05 appends verification methods to the same files (see Verification Methods below).
 
 ## Objective
 Generate one Page Object per Page Inventory entry (skills/knowledge/framework-architecture.md's Page Identity Test) — never one per UI pattern, component, or feature. Each Page Object contains only logic related to that one real page — never combine multiple pages into a single class, and never split a single page's table/dropdown/search/filter patterns into classes of their own.

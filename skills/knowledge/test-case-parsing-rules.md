@@ -3,8 +3,8 @@
 ## Purpose
 Defines how to ingest a company-supplied Test Case file (CSV or Excel) and normalize it into a canonical Test Case Model that every downstream Skill can consume, regardless of the exact column headers, sheet layout, or tool used to produce the file. Refer alongside skills/knowledge/framework-rules.md and skills/knowledge/output-structure.md.
 
-## Used By Skills
-01 Test Case Analysis · 05 Assertion Generation · 06 Test Data Generation · 07 Spec Generation · 08 Framework Validation · 09 Test Execution & Self-Healing
+## Dependency Matrix
+Which Skills load this file is declared in agent/agent.md's Skill Dependency Matrix — that table is the single source of truth.
 
 ## Objective
 Convert raw spreadsheet/CSV rows into a structured, canonical Test Case Model — one record per test case — without losing or fabricating information. The Test Case file is the mandatory source of scenario truth for the entire framework; nothing downstream may invent a scenario that isn't traceable to a parsed row.
@@ -27,7 +27,7 @@ Every parsed test case must resolve to these canonical fields:
 | `preconditions` | State required before executing the steps |
 | `steps` | Ordered list of user actions |
 | `testData` | Input values referenced by the steps |
-| `expectedResult` | Observable outcome that verification methods must assert |
+| `expectedResult` | Observable outcome(s) that verification methods must assert — a single overall outcome, or a multi-line/numbered list giving one outcome per corresponding step |
 | `priority` | Optional — High/Medium/Low, informs Assertion Generation priority |
 | `type` | Optional — positive/negative/boundary, informs Spec classification |
 
@@ -47,6 +47,9 @@ If a header cannot be matched to a canonical field with reasonable confidence, d
 
 ## Step Parsing
 Steps are often stored in a single cell as a numbered or line-separated list (e.g. "1. Open login page\n2. Enter username\n3. Click Login"). Split into an ordered array and preserve sequence exactly — never reorder or merge steps.
+
+## Expected Result Parsing
+`expectedResult` is parsed the same way `steps` is: if it's stored as a single overall outcome, keep it as one value. If it's stored as a multi-line/numbered list (e.g. "1. Username field accepts input\n2. Password field masks input\n3. User is redirected to the dashboard"), split it into an ordered array the same way and preserve its position-by-position correspondence to `steps` — do not collapse a per-step list into one combined string, and do not fabricate a per-step split when the source only ever gave one overall result.
 
 ## Missing Required Data
 `id` and `steps` are required for a row to become an automatable test case.

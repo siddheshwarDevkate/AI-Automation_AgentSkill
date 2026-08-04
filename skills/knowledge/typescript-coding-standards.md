@@ -3,8 +3,8 @@
 ## Purpose
 TypeScript coding standards for generated Playwright automation code — code quality, maintainability, consistency. Refer alongside skills/knowledge/framework-rules.md, skills/knowledge/framework-architecture.md, and skills/knowledge/playwright-best-practices.md. File/method ordering within a generated file is owned by skills/knowledge/output-structure.md, not repeated here.
 
-## Used By Skills
-04 Page Object Generation · 08 Framework Validation
+## Dependency Matrix
+Which Skills load this file is declared in agent/agent.md's Skill Dependency Matrix — that table is the single source of truth. Every Skill that emits TypeScript loads it.
 
 ## General Principles
 - **TS-001 — Enable Strong Typing.** e.g. `const username: string = 'standard_user';`.

@@ -3,8 +3,8 @@
 ## Purpose
 Defines the expected structure, organization, and quality of all generated Playwright framework artifacts, so every generated framework follows the same layout and formatting regardless of the AI model. Refer alongside skills/knowledge/framework-rules.md, skills/knowledge/framework-architecture.md, and skills/knowledge/naming-conventions.md.
 
-## Used By Skills
-01 Test Case Analysis · 02 Application Analysis · 04 Page Object Generation · 05 Assertion Generation · 06 Test Data Generation · 07 Spec Generation · 08 Framework Validation · 09 Test Execution & Self-Healing · 10 Framework Review
+## Dependency Matrix
+Which Skills load this file is declared in agent/agent.md's Skill Dependency Matrix — that table is the single source of truth.
 
 ## Objective
 Generate a clean, modular, production-ready framework that's immediately usable with minimal or no manual modification. Generate only the requested artifacts.

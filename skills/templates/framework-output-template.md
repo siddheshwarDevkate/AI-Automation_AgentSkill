@@ -3,8 +3,8 @@
 ## Purpose
 Defines how the final Playwright automation framework should be assembled and presented after generation completes, ensuring every generated framework follows the same structure, organization, and quality regardless of AI model. Refer to all project Standards, Knowledge files, and skills/knowledge/generation-patterns.md before producing final output.
 
-## Used By Skills
-08 Framework Validation · 10 Framework Review
+## Dependency Matrix
+Template assignment is declared in agent/agent.md's Skill Dependency Matrix — that table is the single source of truth.
 
 ## Generation Objective
 Generate a complete, production-ready framework that follows the defined architecture, all framework standards, naming conventions, locator strategy, coding standards, and generation patterns, and is immediately usable — with every generated test traceable to a supplied Test Case. No partial implementations.

@@ -3,8 +3,8 @@
 ## Purpose
 The single source of truth for discovering, selecting, validating, and maintaining Playwright locators. Objective: generate the most stable locator for every element — prefer long-term stability over shorter syntax.
 
-## Used By Skills
-03 Locator Generation · 08 Framework Validation · 09 Test Execution & Self-Healing (locator-drift repairs)
+## Dependency Matrix
+Which Skills load this file is declared in agent/agent.md's Skill Dependency Matrix — that table is the single source of truth.
 
 ## General Principles
 - **LS-001 — Use the Live Application.** Inspect the running DOM. Never assume attributes.

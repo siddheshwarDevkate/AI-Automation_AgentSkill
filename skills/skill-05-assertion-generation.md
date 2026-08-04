@@ -4,8 +4,7 @@
 Identify required validation points from each test case's `expectedResult` and write the corresponding verification methods directly into the Page Objects Skill 04 just generated. This Skill runs immediately after Page Object Generation and before Test Data Generation / Spec Generation, so that by the time Spec Generation runs, every verification method a test will ever call already exists.
 
 ## Execution Dependencies
-**Knowledge:** skills/knowledge/framework-rules.md, skills/knowledge/playwright-best-practices.md, skills/knowledge/generation-patterns.md, skills/knowledge/output-structure.md, skills/knowledge/test-case-parsing-rules.md
-**Templates:** skills/templates/verification-template.md
+Load the Knowledge files and Template listed for Skill 05 in agent/agent.md's **Skill Dependency Matrix** — that table is the single source of truth and is deliberately not restated here.
 
 ## Inputs
 Required: Test Case Model (from Skill 01), Application Analysis Report, Generated Page Objects (from Skill 04).
@@ -41,6 +40,8 @@ Derive validation points directly from `expectedResult` text, e.g.:
 
 If an `expectedResult` is ambiguous or too vague to derive a concrete assertion, document the gap rather than guessing at business intent.
 
+**Per-Step Expected Results:** When `expectedResult` was parsed as a per-step list (per skills/knowledge/test-case-parsing-rules.md's Expected Result Parsing), generate a verification method for each step's outcome individually, and keep its position-by-position correspondence to the source step — this tells Skill 07 exactly which step to call each verification method after, rather than batching every check to the end of the test.
+
 ## Assertion Classification
 Visibility, navigation, content, state change, business rule, data validation, error validation, permission validation, success/negative validation — classify strictly based on what the `expectedResult` actually states.
 
@@ -70,7 +71,5 @@ Every test case's `expectedResult` parsed into validation points · every needed
 ## Failure Handling
 If an `expectedResult` can't be mapped to a concrete assertion, document the gap, continue with the rest, and report it for the final coverage report. Never invent a validation that isn't traceable to a test case.
 
-## References
-**Knowledge:** skills/knowledge/framework-rules.md, skills/knowledge/generation-patterns.md, skills/knowledge/playwright-best-practices.md, skills/knowledge/test-case-parsing-rules.md
-**Templates:** skills/templates/verification-template.md
-**Consumed by:** Skill 06 — Test Data Generation, Skill 07 — Spec Generation, Skill 08 — Framework Validation
+## Consumed By
+Skill 06 — Test Data Generation · Skill 07 — Spec Generation · Skill 08 — Framework Validation

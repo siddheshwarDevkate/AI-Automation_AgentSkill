@@ -4,8 +4,7 @@
 Validate the generated framework against project standards, coding guidelines, architecture, and — now mandatory — Test Case traceability before delivery. Identifies issues — does NOT modify the generated framework.
 
 ## Execution Dependencies
-**Knowledge:** skills/knowledge/framework-architecture.md, skills/knowledge/framework-rules.md, skills/knowledge/locator-strategy.md, skills/knowledge/naming-conventions.md, skills/knowledge/generation-patterns.md, skills/knowledge/output-structure.md, skills/knowledge/playwright-best-practices.md, skills/knowledge/typescript-coding-standards.md, skills/knowledge/test-case-parsing-rules.md
-**Templates:** skills/templates/framework-output-template.md
+Load the Knowledge files and Template listed for Skill 08 in agent/agent.md's **Skill Dependency Matrix** — that table is the single source of truth and is deliberately not restated here. This Skill's row is **all ten** Knowledge files, because it validates the framework against every standard.
 
 ## Inputs
 Required: Test Case Model, Application Analysis Report (including its Page Inventory), Generated Page Objects (with verification methods from Skill 05), Generated Spec Files, `test-data/testData.ts` (from Skill 06), project standards.
@@ -52,6 +51,8 @@ Verify every test case's `expectedResult` has a corresponding assertion, duplica
 ## Test Data Validation
 Verify every test case's `testData` needs are satisfied or documented as a gap, shared data is reused, no duplicate datasets, sensitive data handled appropriately.
 
+**Test Data Lifecycle Check:** Using Skill 06's Test Data Lifecycle Plan, confirm every test case classified state-creating or state-mutating either uses a uniqueness factory for its uniqueness-constrained values or has teardown wired — a case with neither will pass once and fail on every subsequent run, so flag it as a violation of skills/knowledge/framework-rules.md's TD-02/TD-03. Also confirm no teardown contains an assertion (TD-03) and no test consumes a record another test created (TD-04).
+
 ## Standards Compliance
 Validate against: skills/knowledge/framework-rules.md, skills/knowledge/playwright-best-practices.md, skills/knowledge/typescript-coding-standards.md, skills/knowledge/naming-conventions.md, skills/knowledge/generation-patterns.md, skills/knowledge/test-case-parsing-rules.md. Identify every violation.
 
@@ -61,13 +62,20 @@ Detect duplicate methods, Page Objects, scenarios, assertions, or test data. Rec
 ## Completeness Validation
 Ensure every parsed test case is accounted for (automated or explicitly documented as not automated), every required file generated, no missing component or incomplete implementation.
 
+## Re-Validation Mode (invoked by Skill 09)
+Skill 09 re-invokes this Skill after any repair that modified generated code, before Skill 10 sees the results — because a repair can introduce exactly the violations this Skill exists to catch (an inline assertion added to route around a missing verification method, a new component-masquerading-as-a-page class, a naming or lifecycle regression).
+
+When invoked in this mode:
+- Re-run the full check set against the **current** state of the framework — the earlier Validation Report describes pre-repair code and is stale by definition.
+- Scope depends on what the repairs touched: if they were confined to specific files, re-validate those plus anything importing them; if they touched a shared artifact (`BasePage.ts`, a shared component class, `testData.ts`, a `fixtures/`/`hooks/` file), re-validate the whole framework.
+- Emit a **replacement** Validation Report, clearly marked as post-repair and noting which Skill 09 repairs prompted it. Never leave two reports where Skill 10 could read the outdated one.
+- A violation found here is reported back to Skill 09, which repairs it under its existing retry budget rather than this Skill modifying anything — this Skill never modifies the framework, in either mode.
+
 ## Success Criteria
-Framework inspected · all artifacts validated · Page Object count matches the Page Inventory exactly · Test Case Traceability Matrix complete · compliance verified · issues documented · Validation Report generated.
+Framework inspected · all artifacts validated · Page Object count matches the Page Inventory exactly · Test Case Traceability Matrix complete · test data lifecycle verified · compliance verified · issues documented · Validation Report generated (and replaced, if re-validation ran post-repair).
 
 ## Failure Handling
 If validation can't be completed, document the limitation, continue validating remaining artifacts, and report incomplete validation. Never assume compliance or traceability without verification.
 
-## References
-**Knowledge:** skills/knowledge/framework-rules.md, skills/knowledge/playwright-best-practices.md, skills/knowledge/typescript-coding-standards.md, skills/knowledge/naming-conventions.md, skills/knowledge/generation-patterns.md, skills/knowledge/test-case-parsing-rules.md
-**Templates:** skills/templates/framework-output-template.md
-**Consumed by:** Skill 09 — Test Execution & Self-Healing
+## Consumed By
+Skill 09 — Test Execution & Self-Healing (both as its input, and as the re-validation gate Skill 09 re-invokes after any code-modifying repair) · Skill 10 — Framework Review

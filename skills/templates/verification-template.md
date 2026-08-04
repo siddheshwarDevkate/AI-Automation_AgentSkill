@@ -3,8 +3,8 @@
 ## Purpose
 The standard approach for generating verification methods inside Playwright Page Objects. Verification methods validate application behavior, page state, UI elements, and business outcomes. Specs invoke these methods rather than writing Playwright assertions directly. Refer to skills/knowledge/framework-rules.md, skills/knowledge/playwright-best-practices.md, and skills/knowledge/naming-conventions.md alongside this file.
 
-## Used By Skills
-05 Assertion Generation
+## Dependency Matrix
+Template assignment is declared in agent/agent.md's Skill Dependency Matrix — that table is the single source of truth.
 
 ## Objective
 Generate reusable verification methods that encapsulate Playwright assertions — hiding implementation, improving test readability, promoting reuse, and following POM principles.

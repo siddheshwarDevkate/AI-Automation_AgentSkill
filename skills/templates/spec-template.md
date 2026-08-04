@@ -3,8 +3,8 @@
 ## Purpose
 The standard structure for generating Playwright test specification files, ensuring consistency, readability, and maintainability. Refer to skills/knowledge/framework-rules.md, skills/knowledge/naming-conventions.md, and skills/knowledge/generation-patterns.md alongside this file.
 
-## Used By Skills
-07 Spec Generation
+## Dependency Matrix
+Template assignment is declared in agent/agent.md's Skill Dependency Matrix — that table is the single source of truth.
 
 ## Objective
 Generate clean, readable, maintainable Playwright test specs — one per supplied Test Case, tagged with its Test Case ID. Tests validate business behaviour and never contain UI implementation details — all application interaction happens through Page Objects, and all data comes from `test-data/testData.ts`. This Skill wires together methods and constants that Skills 04–06 already created; it never defines new ones.
@@ -13,7 +13,7 @@ Generate clean, readable, maintainable Playwright test specs — one per supplie
 Read Test Case → Identify Required Page Objects → Import Required Test Data Constants (from `testData.ts`) → Generate Test Setup → Generate the Test, Tagged with its Test Case ID → Validate Against `expectedResult` → Validate Generated Code
 
 ## File Structure (fixed order)
-Imports → `test.describe()` → Page Object Declarations → `beforeEach()` → Positive Test Cases → Negative Test Cases → Boundary/Edge Case Tests → Cleanup (if required).
+Imports → `test.describe()` → Page Object Declarations → `beforeEach()` → `afterEach()` (when the spec creates or mutates state) → Positive Test Cases → Negative Test Cases → Boundary/Edge Case Tests.
 
 ## Imports
 Import only required files — Page Objects, and the specific test data constants this spec file needs from `test-data/testData.ts`:
@@ -74,8 +74,40 @@ await expect(loginPage.errorMessageLocator).toBeVisible();
 ```
 If the verification method you need doesn't exist yet, that is a Skill 05 gap — document it, do not write an inline assertion here to route around it.
 
+**Per-Step Assertions:** When a test case defines an expected result for more than one of its steps (per skills/knowledge/test-case-parsing-rules.md's Expected Result Parsing), call the matching verification method right after the step it validates — do not perform every action first and assert everything at the end. A single test case still yields a single `test()`; that method simply contains one action-then-verify pair per checkpoint the test case defines, e.g.:
+```typescript
+test('[TC-021] Registration form validates each field as it is completed', async () => {
+    await registerPage.fillEmail(validEmail);
+    await registerPage.verifyEmailAccepted();
+
+    await registerPage.fillPassword(weakPassword);
+    await registerPage.verifyPasswordStrengthWarning();
+
+    await registerPage.clickSubmit();
+    await registerPage.verifyRegistrationBlocked();
+});
+```
+
 ## Test Independence
 Each test must execute independently, not depend on another test, create its own required state, and clean up if necessary.
+
+## Teardown (`afterEach()`)
+Any test that creates or mutates application state must undo it, per skills/knowledge/test-data-lifecycle.md. Teardown contains cleanup calls only — never assertions, and never a swallowed failure:
+```typescript
+test.afterEach(async () => {
+    await customerPage.deleteCustomerIfPresent(createdCustomerName);
+});
+```
+Use the uniqueness factory rather than a shared constant, so repeated runs and parallel workers never collide:
+```typescript
+test('[TC-031] New customer is created successfully', async () => {
+    createdCustomerName = buildUniqueCustomerName();
+
+    await customerPage.createCustomer(createdCustomerName);
+    await customerPage.verifyRecordCreated(createdCustomerName);
+});
+```
+Only data this suite created may be cleaned up — never delete pre-existing application data to force a clean starting state. When two or more specs need the same teardown, extract it to `hooks/` instead of repeating it.
 
 ## Test Naming
 Describe blocks represent the feature/module; test names describe business behaviour. Good: "Valid user can login successfully", "Invalid password displays error message". Avoid: "Test1", "Verify Login", "Sample Test".
@@ -128,4 +160,4 @@ Generated test files should be readable, modular, independent, reuse Page Object
 Access to private locators or protected Page properties, duplicated Page Object logic, inline test data literals, `page.waitForTimeout()`, hardcoded unnecessary waits, commented-out code, unused variables, or a reusable/common function defined inline in the spec file (data generators, custom wait conditions, retry wrappers, shared setup/teardown logic used by more than one test or spec) — extract those to `utils/`, `fixtures/`, or `hooks/` per skills/knowledge/framework-architecture.md's Reusable Logic Placement section instead. A one-off helper used by only this spec, with no expectation of reuse, may still stay local.
 
 ## Validation Checklist
-✓ Correct imports, including test data imported from `testData.ts` (never inline) · ✓ proper Page Object usage · ✓ one test per Test Case · ✓ every test tagged with its Test Case ID · ✓ no scenario generated outside the Test Case Model · ✓ no duplicate logic · ✓ no reusable/common function defined inline in the spec file · ✓ no direct locator access · ✓ no inline assertions bypassing a missing verification method · ✓ tests are independent · ✓ follows all project standards
+✓ Correct imports, including test data imported from `testData.ts` (never inline) · ✓ proper Page Object usage · ✓ one test per Test Case · ✓ every test tagged with its Test Case ID · ✓ no scenario generated outside the Test Case Model · ✓ no duplicate logic · ✓ no reusable/common function defined inline in the spec file · ✓ no direct locator access · ✓ no inline assertions bypassing a missing verification method · ✓ every step-level expected result is asserted right after its step, not deferred to the end · ✓ state-creating tests use a uniqueness factory, not a fixed literal · ✓ state-creating/mutating tests have teardown, containing no assertions · ✓ tests are independent · ✓ follows all project standards

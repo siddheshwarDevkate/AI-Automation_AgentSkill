@@ -4,8 +4,7 @@
 Read the company-supplied Test Case file (CSV or Excel) and convert it into a canonical Test Case Model that drives every subsequent Skill. This is the mandatory entry point of the pipeline — the framework is no longer generated from free-form exploration alone; every generated artifact must trace back to a supplied test case.
 
 ## Execution Dependencies
-**Knowledge:** skills/knowledge/test-case-parsing-rules.md, skills/knowledge/framework-rules.md, skills/knowledge/framework-architecture.md, skills/knowledge/output-structure.md
-**Templates:** None — produces a Test Case Model (data), not generated code.
+Load the Knowledge files listed for Skill 01 in agent/agent.md's **Skill Dependency Matrix** — that table is the single source of truth and is deliberately not restated here. This Skill uses no Template; it produces a Test Case Model (data), not generated code.
 
 ## Inputs
 Required: Test Case file (`.csv` or `.xlsx`), supplied by the user, typically under `skills/Input/`.
@@ -53,7 +52,5 @@ Test Case file located and parsed · headers normalized · every row validated �
 ## Failure Handling
 Stop if the Test Case file cannot be found, cannot be parsed, or contains no valid rows after parsing. Report the issue to the Agent — never continue generation from an empty or fabricated Test Case Model.
 
-## References
-**Knowledge:** skills/knowledge/test-case-parsing-rules.md, skills/knowledge/framework-rules.md, skills/knowledge/framework-architecture.md, skills/knowledge/output-structure.md
-**Templates:** None
-**Consumed by:** Skill 02 — Application Analysis, Skill 05 — Assertion Generation, Skill 06 — Test Data Generation, Skill 07 — Spec Generation
+## Consumed By
+Skill 02 — Application Analysis · Skill 05 — Assertion Generation · Skill 06 — Test Data Generation · Skill 07 — Spec Generation
