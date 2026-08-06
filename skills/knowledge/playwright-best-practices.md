@@ -10,7 +10,7 @@ Which Skills load this file is declared in agent/agent.md's Skill Dependency Mat
 - **BP-001 — Prefer Playwright Native APIs:** `expect()`, `locator()`, `getByRole()`, `getByLabel()`, `waitFor()`, `toHaveURL()`, `toHaveTitle()`.
 - **BP-002 — Use Auto Waiting.** Playwright auto-waits for actionable elements — don't add unnecessary waits. Correct: `await loginButton.click();`. Incorrect: `await page.waitForTimeout(3000); await loginButton.click();`.
 - **BP-003 — Keep Tests Deterministic.** Avoid depending on timing, execution order, existing app state, or random UI behavior.
-- **BP-004 — Prefer `innerText()` over `textContent()`.** `textContent()` includes hidden text and whitespace noise; `innerText()` reflects rendered, visible text.
+- **BP-004 — Prefer `innerText()` over `textContent()`.** `textContent()` includes hidden text and whitespace noise; `innerText()` reflects rendered, visible text. It is also type-safe: `innerText()` returns `Promise<string>` while `textContent()` returns `Promise<string | null>`, so returning the latter from a method declared `Promise<string>` is a compile error (see TS-004a). Better still, when the value is only being compared, assert on it directly — `await expect(locator).toHaveText('3 columns selected')` — rather than reading it into a variable at all.
 
 ## Locators
 - **BP-101 — Create Once, in the Constructor:**
@@ -43,7 +43,17 @@ Don't recreate locators inside every method.
 
 ## Navigation
 - **BP-501 — Verify Navigation** after important transitions: URL, page title, visible element.
-- **BP-502 — Encapsulate Navigation** inside Page Objects, e.g. `await dashboardPage.navigateTo();`.
+- **BP-502 — Encapsulate Navigation** inside Page Objects, e.g. `await dashboardPage.navigateTo();`. A spec must never navigate by reaching through a Page Object to the browser:
+```typescript
+// Wrong — 'page' is protected; this is both a compile error and a POM-03 violation
+await selectUserGroupPage.page.goto('/bicnet/#/select-user-group');
+await selectUserGroupPage.page.waitForLoadState('networkidle');
+
+// Right — the Page Object owns its own route and readiness check
+await selectUserGroupPage.navigateTo();
+```
+The fix is always to add or call a Page Object method — never to change `page` from `protected` to `public` so the spec compiles.
+- **BP-503 — Avoid `waitForLoadState('networkidle')`.** Playwright discourages it for testing: it waits on network silence rather than on the thing you actually care about, making it both slow and unreliable on apps with polling or analytics. Wait for the state that proves the page is ready instead — `await expect(this.headingLocator).toBeVisible();` — per BP-402.
 
 ## Test Structure
 - **BP-601 — Arrange → Act → Assert.**

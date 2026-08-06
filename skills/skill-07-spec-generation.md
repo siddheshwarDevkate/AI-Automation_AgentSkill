@@ -28,6 +28,18 @@ Every parsed test case (per Skill 01's Test Case Model) produces exactly one spe
 - Wire teardown for every test case Skill 06's Test Data Lifecycle Plan marked state-creating or state-mutating, per skills/knowledge/test-data-lifecycle.md's Teardown section
 - Generate the actual Spec files per skills/templates/spec-template.md
 
+## Extraction Pass (run before finalizing the specs)
+Generate the specs first, then — before declaring this Skill complete — run skills/knowledge/framework-architecture.md's **Mandatory Extraction Analysis** across everything just written, and refactor what it finds. This is a required step with a recorded outcome, not an opportunistic one.
+
+Concretely, compare every spec's `beforeEach`/`afterEach` and setup code against every other spec's:
+- Same routine in two or more specs → move it to `hooks/` and import it.
+- Shared precondition (logged-in user, seeded record, selected context) → make it a `fixtures/` fixture.
+- Repeated helper logic with no Playwright lifecycle dependency → `utils/`.
+
+**Inline login in every spec is the failure this catches.** If several specs each open the app and log in inside their own `beforeEach`, that is duplicated logic that belongs in one fixture or hook — regardless of the fact that each spec works in isolation.
+
+State the outcome in the Spec Generation notes: what was extracted and where, or an explicit "no logic is shared across two or more specs" if genuinely nothing was. Leaving `utils/`, `hooks/`, and `fixtures/` empty is acceptable only as that stated conclusion — never as the result of not checking.
+
 ## Test Data Lifecycle Wiring
 Skill 06 produced a Test Data Lifecycle Plan classifying each test case as read-only, state-creating, or state-mutating. Honour it here:
 - **Call the uniqueness factory, never the raw constant**, for a state-creating test case's uniqueness-constrained values — `await customerPage.createCustomer(buildUniqueCustomerName())`, not a fixed literal or a shared constant that every run reuses.
@@ -63,7 +75,7 @@ Test cases are the source of truth, so duplicates should already be resolved in 
 Before completing, verify every parsed test case maps to exactly one generated test or is explicitly recorded as "Not Automated." Coverage is measured against the Test Case Model, not against discovered application functionality.
 
 ## Success Criteria
-Every test case mapped to a Spec file · one test generated per test case · every generated test tagged with its source `id` · every test calls only pre-existing Page Object methods and pre-existing data constants (no inline assertions, no hardcoded literals) · no reusable/common function defined inline inside a spec file (extracted to `utils/`/`fixtures/`/`hooks/` instead) · every state-creating/state-mutating test case uses its uniqueness factory and has teardown wired · unautomatable test cases documented, not fabricated · Spec files generated.
+Every test case mapped to a Spec file · one test generated per test case · every generated test tagged with its source `id` · every test calls only pre-existing Page Object methods and pre-existing data constants (no inline assertions, no hardcoded literals) · no reusable/common function defined inline inside a spec file (extracted to `utils/`/`fixtures/`/`hooks/` instead) · every state-creating/state-mutating test case uses its uniqueness factory and has teardown wired · Extraction Pass run and its outcome recorded (shared setup moved to `hooks/`/`fixtures/`, or an explicit "nothing shared") · unautomatable test cases documented, not fabricated · Spec files generated.
 
 ## Failure Handling
 If a test case can't be automated, document it as "Not Automated" with the reason and continue with the rest. Never invent a scenario, step, Page Object behaviour, verification method, or data value to force a test case through.

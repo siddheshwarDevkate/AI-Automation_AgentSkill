@@ -11,6 +11,24 @@ Which Skills load this file is declared in agent/agent.md's Skill Dependency Mat
 - **TS-002 — Never Use `any`.** Use proper interfaces, types, or generics instead.
 - **TS-003 — Always Specify Return Types.** e.g. `async login(): Promise<void> {}`, `async getTitle(): Promise<string> {}`. Not `async login() {}`.
 - **TS-004 — Prefer `readonly`** for properties that never change: `private readonly usernameInputLocator: Locator;`.
+- **TS-004a — Never declare away a nullable return.** Several Playwright APIs return `T | null` — most commonly `textContent()` (`Promise<string | null>`) and `getAttribute()` (`Promise<string | null>`). Declaring the method `Promise<string>` and returning that value directly is a type error, and it compiles only if someone silences it. Handle the null instead:
+```typescript
+// Wrong — Type 'string | null' is not assignable to type 'string'
+async getColumnsSelectedCount(): Promise<string> {
+    return await this.columnsSelectedTextLocator.textContent();
+}
+
+// Right — innerText() returns Promise<string>, and reflects rendered text (BP-004)
+async getColumnsSelectedCount(): Promise<string> {
+    return await this.columnsSelectedTextLocator.innerText();
+}
+
+// Also right — when textContent() is genuinely needed
+async getColumnsSelectedCount(): Promise<string> {
+    return (await this.columnsSelectedTextLocator.textContent()) ?? '';
+}
+```
+Never "fix" this with `as string`, `!`, or `any` — that hides a real null at runtime instead of handling it. Best of all, prefer an assertion (`await expect(locator).toHaveText(...)`) over a getter whenever the value is only being compared.
 - **TS-005 — Use `const` by Default.** Use `let` only when reassignment is required; avoid unnecessary mutable variables.
 
 ## Imports

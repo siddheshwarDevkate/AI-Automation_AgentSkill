@@ -28,12 +28,8 @@ export class BasePage {
         this.page = page;
     }
 
-    async navigateTo(path: string): Promise<void> {
+    protected async goto(path: string): Promise<void> {
         await this.page.goto(path);
-    }
-
-    async waitForPageLoad(): Promise<void> {
-        await this.page.waitForLoadState('networkidle');
     }
 
     async getCurrentUrl(): Promise<string> {
@@ -43,6 +39,16 @@ export class BasePage {
     async getPageTitle(): Promise<string> {
         return this.page.title();
     }
+}
+```
+
+**`page` stays `protected`.** It is reachable by subclasses and by nothing else. A spec that needs to navigate calls `await somePage.navigateTo()`; a spec that writes `somePage.page.goto(...)` is both a compile error and a POM-03 violation, and the fix is a Page Object method — never widening `page` to `public`.
+
+**No generic `waitForPageLoad()`.** A shared `waitForLoadState('networkidle')` helper is deliberately absent: Playwright discourages `networkidle` for testing, and a page is "loaded" when the element that proves it is visible, not when the network goes quiet. Each Page Object waits for its own readiness signal instead (BP-503):
+```typescript
+async navigateTo(): Promise<void> {
+    await this.goto('/select-user-group');
+    await expect(this.userGroupHeadingLocator).toBeVisible();
 }
 ```
 
@@ -85,16 +91,18 @@ constructor(page: Page) {
 ```
 
 ## Navigation Methods
-Generate when applicable, e.g.:
+Each Page Object owns its own route and its own readiness check:
 ```typescript
 async navigateTo(): Promise<void> {
-    await super.navigateTo('/login');
+    await this.goto('/login');
+    await expect(this.loginButtonLocator).toBeVisible();
 }
 
 async refreshPage(): Promise<void> {
     await this.page.reload();
 }
 ```
+`this.goto()` is BasePage's `protected` helper — legal here because this class extends BasePage. Never expose a navigation path to the spec; the spec calls `navigateTo()` and nothing else.
 
 ## Action Methods
 One method per action, each with a single responsibility, explicit parameter and return types:
@@ -199,7 +207,8 @@ export class LoginPage extends BasePage {
     }
 
     async navigateTo(): Promise<void> {
-        await super.navigateTo('/login');
+        await this.goto('/login');
+        await expect(this.loginButtonLocator).toBeVisible();
     }
 
     async fillUsername(username: string): Promise<void> {

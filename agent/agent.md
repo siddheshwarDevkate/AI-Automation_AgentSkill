@@ -514,6 +514,11 @@ open `execution-report.md` and verify by reading it:
    result was not executed.
 4. The Re-Validation Gate outcome is recorded (or explicitly notes that no
    repair modified code).
+5. **The Validation Report records a clean compilation check.** Passing tests do
+   not prove the code compiles — Playwright strips types without checking them,
+   so type errors run green. If no `tsc --noEmit` result is recorded, or it
+   reported errors, the framework is not deliverable no matter how many tests
+   passed.
 
 **If `execution-report.md` does not exist, is empty, or is missing IDs, the
 framework is not deliverable — return to Skill 09 and execute.** Generating the

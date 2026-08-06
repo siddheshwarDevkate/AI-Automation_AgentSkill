@@ -25,7 +25,7 @@ Higher priority always overrides lower.
 3. **Understand before generating.** Framework generation begins only after the Test Case file has been parsed and application analysis has succeeded.
 4. **Every generated Spec test must trace back to exactly one supplied Test Case ID.** Never generate a scenario that isn't traceable to a parsed test case.
 5. **Generate only production-ready code.** Incomplete implementations are prohibited.
-6. **Every generated file must pass validation before delivery.**
+6. **Every generated file must pass validation before delivery** — including an actual compilation check (`tsc --noEmit`), run by Skill 08. **Playwright does not type-check**; it strips types with esbuild, so broken code runs and passes. A green suite is therefore not evidence that the framework builds, and "all tests passed" must never be reported as though it were.
 7. **Code is not correct until it has actually been executed and passed** across the configured browser matrix (per skills/skill-09-test-execution-self-healing.md). Never call a framework production ready on static validation alone.
 8. **Never repair a failing test by weakening it.** No loosened assertions, no altered test data to hide a failure, no suppressed exceptions. A genuine application defect is reported, never masked.
 9. **One Page Object per real application page — never one per UI pattern, component, or feature.** A data table, dropdown, filter panel, or free-text search box found on a page is a method on that page's Page Object, not a class of its own. Page Object count must equal Skill 02's Page Inventory count exactly. See POM-05.
@@ -43,7 +43,7 @@ These five prohibitions carry the same severity as the Critical Rules above and 
 These are access-enforcement rules (what code is and isn't allowed to touch). What a Page Object structurally contains lives in skills/knowledge/framework-architecture.md's Page Object Responsibilities.
 - **POM-01:** Every locator must remain `private readonly`. Never expose locators outside the Page Object.
 - **POM-02:** Specs interact only through public methods. Correct: `await loginPage.performLogin(username, password);` — Incorrect: `await loginPage.usernameInputLocator.fill(username);`
-- **POM-03:** Never expose Page properties. Correct: `await loginPage.verifyCurrentUrl(...)` — Incorrect: `await expect(loginPage.page).toHaveURL(...)`
+- **POM-03:** Never expose Page properties. `page` is `protected` in `BasePage` and stays that way. Correct: `await loginPage.verifyCurrentUrl(...)` / `await loginPage.navigateTo()` — Incorrect: `await expect(loginPage.page).toHaveURL(...)` / `await loginPage.page.goto(...)` / `await loginPage.page.waitForLoadState(...)`. These are compile errors as well as rule violations, and the fix is always to add or call a Page Object method — **never** to widen `page` to `public` so the spec compiles.
 - **POM-04:** Business logic belongs inside Page Objects; Spec files stay clean and readable.
 - **POM-05 (Critical):** The number of generated Page Objects must equal the number of entries in Skill 02's Page Inventory — never one per detected UI pattern, component, or feature (e.g. a data table, column-selection dropdown, or free-text search box). Full rule, decision test, and forbidden example live in skills/knowledge/framework-architecture.md's Page vs Component distinction and skills/skill-04-page-object-generation.md's Page Object Count Rule.
 

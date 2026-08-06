@@ -28,6 +28,8 @@ Before generating any page-specific Page Object, check whether `BasePage.ts` alr
 ## Utility Class Generation
 While generating Page Objects, watch for logic that would otherwise be duplicated across multiple classes (e.g. a repeated wait pattern, a repeated date-formatting routine). When found, extract it into a utility class (e.g. `WaitHelper.ts`, `DateHelper.ts`) in `utils/`, per skills/knowledge/framework-architecture.md's Utilities section, instead of duplicating it inline. Do not create a utility class speculatively — only when actual duplication is found.
 
+**Checking is mandatory, even though creating is conditional.** After generating the full set of Page Objects, compare their method bodies against each other, per skills/knowledge/framework-architecture.md's Mandatory Extraction Analysis: identical bodies across two or more classes move to `BasePage`; repeated non-page-specific helper logic moves to `utils/`. Record the outcome — what was extracted, or an explicit "no logic duplicated across Page Objects." An empty `utils/` is a valid result only as that stated conclusion, never because the comparison was skipped.
+
 ## Workflow
 Check/Generate BasePage → Read Application Analysis → Read Page Inventory → Read Locator Map → For Each Page Inventory Entry, Generate ONE Page Object (per skills/templates/page-object-template.md structure), Folding In Every Pattern/Component Found On That Page As Methods → Generate Action Methods → Generate Baseline Verification Methods → Extract Duplicated Logic Into Utility Classes When Found → Validate Generated Class Against the Page Object Count Rule Below → Proceed to Next Page Inventory Entry
 

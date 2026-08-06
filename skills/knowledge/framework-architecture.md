@@ -86,6 +86,18 @@ A Spec file (`*.spec.ts`) may only contain: imports, `test.describe()`/`beforeEa
 - **Reusable `beforeEach()`/`afterEach()` routine shared by two or more spec files** that isn't naturally expressed as a fixture (e.g. a common cleanup step, a shared login-before-every-test call) → an importable function in `hooks/`, invoked from each spec's `beforeEach()`/`afterEach()`.
 - **Reusable Page Object action/verification logic used by two or more Page Objects** (not spec-level) → `BasePage`, per the BasePage section above — the Page Object layer's home for shared logic, never duplicated across individual `*Page.ts` classes.
 
+## Mandatory Extraction Analysis (Critical)
+The placement rules above are worded "extract when logic is shared" — which is easy to satisfy by never looking. **Looking is not optional.** Before spec generation completes, run this analysis explicitly and record its conclusion:
+
+1. **List every `beforeEach`/`afterEach` body across all specs.** Any routine appearing in two or more specs goes to `hooks/`. Two specs that both log in, or both navigate to the same landing page, are the textbook case.
+2. **Identify shared preconditions.** Any state two or more specs need before their first step — an authenticated session, a seeded record, a selected user group — becomes a `fixtures/` fixture, not repeated setup.
+3. **Scan for repeated non-Playwright helper logic** — date formatting, string building, random values, environment reading, polling. Two occurrences means it belongs in `utils/`.
+4. **Scan Page Objects for methods with identical bodies** across two or more classes. Those move to `BasePage`.
+
+**Authentication is the near-universal case.** Almost every suite logs in before most tests. If two or more specs require a logged-in user, that belongs in a fixture or hook — never copy-pasted into each spec's `beforeEach`. A framework whose specs each perform their own inline login has failed this analysis.
+
+**Empty is a conclusion, not a default.** `utils/`, `hooks/`, and `fixtures/` may legitimately end up empty — but only after the analysis ran and found nothing shared, and that finding must be stated in the generation notes. Folders left empty because nobody looked, while the same setup is duplicated across specs, is a violation of RL-01/RL-02 and the Reusability principle above, and Skill 08 flags it.
+
 Together, `utils/`, `fixtures/`, `hooks/`, and `BasePage` are the framework's four homes for reusable logic. A helper used by exactly one spec file, with no expectation of reuse, may remain a private function in that file — this rule targets duplicated/shared logic, not every local function. Once a second spec needs the same logic, extract it. See skills/knowledge/framework-rules.md's Reusable Logic Rules (RL-01–RL-04) for the enforcement statement, and skills/knowledge/naming-conventions.md for `fixtures/`/`hooks/` file naming.
 
 ## Test Data

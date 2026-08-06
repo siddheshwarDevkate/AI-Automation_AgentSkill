@@ -35,7 +35,33 @@ Resolve the matrix in this order, and **use the first one that applies**:
 The Browser Matrix (how many browser *engines* to cover) and execution concurrency (how many browser *instances* run at the same time) are separate controls — resolving a 3-browser matrix does not mean 3+ browser windows should be running simultaneously, and it must never balloon into 6. **Cap parallel execution at 2 workers — 2 browser instances running concurrently at any moment — during both the initial run and every self-healing re-run**, regardless of how many browsers are in the resolved matrix or how many test files/cases exist. Set this by configuring `workers: 2` in `playwright.config.ts` (or passing `--workers=2` to the test runner) unless a user-specified value or an existing project configuration says otherwise — same precedence as the Browser Matrix above (user-specified → project-configured → default of 2). Never let a run or a repair fan out to more concurrent browser instances than this cap, even to "go faster."
 
 ## `playwright.config.ts` Exception
-skills/knowledge/framework-architecture.md and skills/knowledge/output-structure.md normally prohibit generating `playwright.config.ts` unless explicitly requested. Running a multi-browser matrix requires browser `projects` to be configured, so this Skill is explicitly permitted to generate or update **only the `projects` array and the top-level `workers` value** of `playwright.config.ts` — and nothing else. Never add unrelated configuration (CI settings, custom reporters, global timeouts, etc.) unless the user asks for it.
+skills/knowledge/framework-architecture.md and skills/knowledge/output-structure.md normally prohibit generating `playwright.config.ts` unless explicitly requested. Running the suite requires a small amount of configuration, so this Skill is permitted to generate or update **only these four keys** — and nothing else:
+- `projects` — the resolved browser matrix (subject to Never Clobber above)
+- `workers` — the concurrency cap (Execution Concurrency above)
+- `reporter` — a single HTML reporter (Reporting Output below)
+- `use.screenshot` / `use.video` / `use.trace` — failure-only artifacts (below)
+
+Never add anything else — CI settings, global timeouts, custom `outputDir` paths, extra reporters — unless the user asks for it.
+
+## Reporting Output — One Report, No Clutter
+**Generate exactly one report: the built-in HTML reporter.** Never add `json`, `junit`, `list`+`html` combinations, or a custom reporter unless the user explicitly asks.
+
+```typescript
+reporter: [['html', { open: 'never' }]],
+use: {
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
+    trace: 'on-first-retry',
+},
+```
+
+**Understand what the two folders actually are before trying to remove one:**
+- `playwright-report/` — the HTML report. This is the report a human reads.
+- `test-results/` — **not a report.** It is Playwright's artifact directory (`outputDir`) holding screenshots, videos, and traces for individual tests.
+
+**Do not try to merge them.** Playwright raises a configuration error when the HTML report folder and `outputDir` overlap or nest, so pointing `outputDir` inside `playwright-report/` breaks the run. The correct way to end up with only `playwright-report/` in practice is the `use` block above: with failure-only artifacts, a fully passing run produces no artifacts, so `test-results/` stays empty or is never created. When tests *do* fail, its contents are exactly what's needed to diagnose them — which is why deleting it outright is the wrong instinct.
+
+Both directories are build output. Ensure they are git-ignored, adding them to an existing `.gitignore` if one is present.
 
 ## Never Clobber an Existing Browser Configuration (Critical)
 **An existing `projects` entry is configuration the user created deliberately. Read it; do not replace it.**
@@ -95,6 +121,15 @@ Cap repair attempts at **3 per test case per browser**. If a test case still fai
 
 ## Flakiness Handling
 A test that fails intermittently (passes on retry with no code change) is not automatically "healed" by retrying until green. Diagnose why it's flaky (usually a missing/incorrect wait) and fix the underlying timing issue per skills/knowledge/playwright-best-practices.md. Document tests that could not be stabilized after the retry budget as flaky, not as passing.
+
+## Passing Tests Do Not Mean Compiling Code (Critical)
+**Playwright does not type-check.** It transpiles TypeScript with esbuild, which strips type annotations without verifying them. Code containing real type errors therefore runs normally and passes — producing a fully green Execution Report for a framework that does not build.
+
+So a green suite is **not** evidence the code compiles, and this Skill must never present it as such. Two failure modes this creates, both seen in practice:
+- A method declared `Promise<string>` returning `textContent()` (`Promise<string | null>`) — runs fine, fails `tsc`.
+- A spec calling `somePage.page.goto(...)` on a `protected` property — runs fine, fails `tsc`, and violates POM-03.
+
+Compilation is proven only by Skill 08's Compilation Check. That is why the Re-Validation Gate below is not optional whenever code changed: **"all tests passed" and "the framework is valid" are separate claims, and this Skill can only establish the first one.**
 
 ## Re-Validation Gate (Critical)
 **If any repair in this Skill modified generated code, re-invoke Skill 08 before producing the Execution Report.** Skill 08's original Validation Report describes the framework as it existed *before* those repairs — handing it to Skill 10 unchanged means the final production-readiness decision is made against code that no longer exists.

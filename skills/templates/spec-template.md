@@ -39,7 +39,7 @@ let dashboardPage: DashboardPage;
 ```
 
 ## Test Setup (`beforeEach()`)
-Responsibilities: launch application, navigate to starting page, create Page Objects, perform common initialization. Never place assertions inside `beforeEach()`.
+Responsibilities: create Page Objects, navigate to the starting page, perform common initialization. Never place assertions inside `beforeEach()`.
 ```typescript
 test.beforeEach(async ({ page }) => {
     loginPage = new LoginPage(page);
@@ -47,6 +47,43 @@ test.beforeEach(async ({ page }) => {
     await loginPage.navigateTo();
 });
 ```
+
+**When two or more specs share this setup, it does not stay here.** Per skills/knowledge/framework-architecture.md's Mandatory Extraction Analysis, repeated setup moves out — and logging in is the case that comes up in almost every suite.
+
+Wrong — the same login copied into every spec file:
+```typescript
+// login.spec.ts, reports.spec.ts, settings.spec.ts ... all repeating this
+test.beforeEach(async ({ page }) => {
+    const loginPage = new LoginPage(page);
+    await loginPage.navigateTo();
+    await loginPage.performLogin(validUsername, validPassword);
+});
+```
+
+Right — one fixture in `fixtures/auth.fixture.ts`, imported everywhere:
+```typescript
+// fixtures/auth.fixture.ts
+import { test as base } from '@playwright/test';
+import { LoginPage } from '../pages/LoginPage';
+import { validUsername, validPassword } from '../test-data/testData';
+
+export const test = base.extend<{ authenticatedPage: void }>({
+    authenticatedPage: [async ({ page }, use) => {
+        const loginPage = new LoginPage(page);
+        await loginPage.navigateTo();
+        await loginPage.performLogin(validUsername, validPassword);
+        await use();
+    }, { auto: true }],
+});
+
+export { expect } from '@playwright/test';
+```
+```typescript
+// reports.spec.ts — imports test from the fixture, not from @playwright/test
+import { test } from '../fixtures/auth.fixture';
+import { ReportsPage } from '../pages/ReportsPage';
+```
+For shared setup that isn't naturally a fixture (a common cleanup step, a shared navigation call), export a function from `hooks/` and call it from each spec's `beforeEach()` instead.
 
 ## Test Organization
 Group related scenarios by module: `test.describe('Login', () => {...})`. Within a feature group, order as Positive Scenarios → Negative Scenarios → Edge Cases. Avoid mixing unrelated features in one file — one Spec file per module (module and Page Inventory page are independent groupings, see skills/knowledge/framework-architecture.md's Module vs Page distinction).
@@ -157,7 +194,7 @@ test.describe('Login', () => {
 Generated test files should be readable, modular, independent, reuse Page Object methods, avoid duplicate logic and unnecessary assertions, and follow Arrange → Act → Assert.
 
 ## Do Not Generate
-Access to private locators or protected Page properties, duplicated Page Object logic, inline test data literals, `page.waitForTimeout()`, hardcoded unnecessary waits, commented-out code, unused variables, or a reusable/common function defined inline in the spec file (data generators, custom wait conditions, retry wrappers, shared setup/teardown logic used by more than one test or spec) — extract those to `utils/`, `fixtures/`, or `hooks/` per skills/knowledge/framework-architecture.md's Reusable Logic Placement section instead. A one-off helper used by only this spec, with no expectation of reuse, may still stay local.
+Access to private locators or the protected `page` property (`somePage.page.goto(...)`, `somePage.page.waitForLoadState(...)` — both compile errors and POM-03 violations; call a Page Object method instead), any raw `page.*` call, `expect()` on a locator, duplicated Page Object logic, inline test data literals, `page.waitForTimeout()`, hardcoded unnecessary waits, commented-out code, unused variables, or a reusable/common function defined inline in the spec file (data generators, custom wait conditions, retry wrappers, shared setup/teardown logic used by more than one test or spec) — extract those to `utils/`, `fixtures/`, or `hooks/` per skills/knowledge/framework-architecture.md's Reusable Logic Placement section instead. A one-off helper used by only this spec, with no expectation of reuse, may still stay local.
 
 ## Validation Checklist
-✓ Correct imports, including test data imported from `testData.ts` (never inline) · ✓ proper Page Object usage · ✓ one test per Test Case · ✓ every test tagged with its Test Case ID · ✓ no scenario generated outside the Test Case Model · ✓ no duplicate logic · ✓ no reusable/common function defined inline in the spec file · ✓ no direct locator access · ✓ no inline assertions bypassing a missing verification method · ✓ every step-level expected result is asserted right after its step, not deferred to the end · ✓ state-creating tests use a uniqueness factory, not a fixed literal · ✓ state-creating/mutating tests have teardown, containing no assertions · ✓ tests are independent · ✓ follows all project standards
+✓ Correct imports, including test data imported from `testData.ts` (never inline) · ✓ proper Page Object usage · ✓ one test per Test Case · ✓ every test tagged with its Test Case ID · ✓ no scenario generated outside the Test Case Model · ✓ no duplicate logic · ✓ no reusable/common function defined inline in the spec file · ✓ no direct locator access · ✓ no inline assertions bypassing a missing verification method · ✓ every step-level expected result is asserted right after its step, not deferred to the end · ✓ state-creating tests use a uniqueness factory, not a fixed literal · ✓ state-creating/mutating tests have teardown, containing no assertions · ✓ setup shared with another spec (especially login) lives in `fixtures/`/`hooks/`, not copied into each `beforeEach` · ✓ tests are independent · ✓ follows all project standards
