@@ -36,6 +36,10 @@ Concretely, before generating anything:
 
 **Generating the default layout into a project whose config points elsewhere produces a framework that cannot run** — the specs exist, but the runner never finds them, or the config fails to resolve and nothing compiles. That failure surfaces at Skill 09 as "the suite cannot be executed," which is the wrong diagnosis: the environment is fine, the files are simply in the wrong place. Skill 09 treats it as Root Cause 7 (build/compile defect) and realigns the paths — but aligning here, up front, avoids it entirely.
 
+**Pre-created empty folders are a layout instruction.** A user who has already created `tests/`, `pages/`, `utils/`, `testData/`, `hooks/`, and `fixtures/` has told you where things go. Generate into exactly those directories.
+
+**Match their spelling, don't correct it.** If the project has `testData/`, generate into `testData/` — do not create a second `test-data/` alongside it because that is what the default structure says, and do not rename their folder. The naming rules in skills/knowledge/naming-conventions.md govern names this framework *chooses*; an existing directory in the target project is not a name being chosen. Two folders serving the same purpose is a worse outcome than a folder whose name differs from the default. Record the mapping in the Target Project Profile so every Skill imports from the same path.
+
 When no existing project layout is detectable, use the default structure above.
 
 ## File Generation Order

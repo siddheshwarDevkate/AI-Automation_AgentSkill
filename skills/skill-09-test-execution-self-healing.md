@@ -22,10 +22,12 @@ Optional: existing `playwright.config.ts`, existing execution/CI configuration, 
 ## Browser Matrix
 Resolve the matrix in this order, and **use the first one that applies**:
 1. **A browser set the user explicitly specified** — always wins.
-2. **Browsers already configured/installed in the target project** (e.g. an existing `playwright.config.ts` with MS Edge, or only Chromium installed) — use what's actually there rather than forcing installs.
-3. **Default: Chromium, Firefox, WebKit** — when neither of the above applies.
+2. **Browsers already configured/installed in the target project** (e.g. an existing `playwright.config.ts` with MS Edge, or only Chromium installed) — use what's actually there rather than forcing installs. See Never Clobber an Existing Browser Configuration above: this config is read, never rewritten.
+3. **Default: Chromium, Firefox, WebKit** — only when neither of the above applies **and** those browsers are actually installed.
 
-**Minimum two browser engines.** If only one is available and cannot be supplemented, run it, and record the reduced matrix prominently in the Execution Report — never report single-browser results as if they were full-matrix coverage.
+**Two browser engines preferred, one accepted.** If only one browser is available and cannot be supplemented, that is a legitimate matrix — run it, and record the reduced matrix prominently in the Execution Report so single-browser results are never presented as full-matrix coverage. A restricted environment that permits exactly one approved browser is a normal, supported case, not a failure.
+
+**Never install a browser.** Do not run `npx playwright install` or otherwise download a browser to widen the matrix — installation may be blocked by policy, and provisioning browsers is the user's decision. Resolve the matrix from what is already present.
 
 **A test case is "Verified Passing" only once it passes on every browser in the resolved matrix.** A pass on one browser and a failure on another is still a failure, reported per-browser.
 
@@ -33,7 +35,20 @@ Resolve the matrix in this order, and **use the first one that applies**:
 The Browser Matrix (how many browser *engines* to cover) and execution concurrency (how many browser *instances* run at the same time) are separate controls — resolving a 3-browser matrix does not mean 3+ browser windows should be running simultaneously, and it must never balloon into 6. **Cap parallel execution at 2 workers — 2 browser instances running concurrently at any moment — during both the initial run and every self-healing re-run**, regardless of how many browsers are in the resolved matrix or how many test files/cases exist. Set this by configuring `workers: 2` in `playwright.config.ts` (or passing `--workers=2` to the test runner) unless a user-specified value or an existing project configuration says otherwise — same precedence as the Browser Matrix above (user-specified → project-configured → default of 2). Never let a run or a repair fan out to more concurrent browser instances than this cap, even to "go faster."
 
 ## `playwright.config.ts` Exception
-skills/knowledge/framework-architecture.md and skills/knowledge/output-structure.md normally prohibit generating `playwright.config.ts` unless explicitly requested. Running a multi-browser matrix requires browser `projects` to be configured, so this Skill is explicitly permitted to generate or update **only the `projects` array and the top-level `workers` value** of `playwright.config.ts` (Chromium/Firefox/WebKit `projects` definitions, and `workers` per the Execution Concurrency rule above). Never add unrelated configuration (CI settings, custom reporters, global timeouts, etc.) unless the user asks for it.
+skills/knowledge/framework-architecture.md and skills/knowledge/output-structure.md normally prohibit generating `playwright.config.ts` unless explicitly requested. Running a multi-browser matrix requires browser `projects` to be configured, so this Skill is explicitly permitted to generate or update **only the `projects` array and the top-level `workers` value** of `playwright.config.ts` — and nothing else. Never add unrelated configuration (CI settings, custom reporters, global timeouts, etc.) unless the user asks for it.
+
+## Never Clobber an Existing Browser Configuration (Critical)
+**An existing `projects` entry is configuration the user created deliberately. Read it; do not replace it.**
+
+This matters most in restricted environments, where a browser is often wired up by hand and cannot be reinstalled if the config is lost — for example a corporate-approved MS Edge binary referenced by an explicit `executablePath`, or a `channel` pinned to a specific build. Overwriting that with a generated `chromium`/`firefox`/`webkit` block leaves a config pointing at browsers that are not installed and cannot be installed, breaking a suite that was working.
+
+Therefore:
+- If `projects` already defines one or more browsers, **that is the resolved matrix** (Browser Matrix rule 2). Use it as-is.
+- **Never remove, rename, or rewrite an existing project entry**, and never strip an `executablePath`, `channel`, `launchOptions`, or any other field on it.
+- Only **append** a project when the resolved matrix genuinely requires a browser that isn't configured yet *and* that browser is already installed. If it isn't installed, do not add it and do not try to install it — record the reduced matrix instead.
+- `workers` may be set per the Execution Concurrency rule whether or not `projects` already exists, since it doesn't affect which browsers run.
+
+If the existing configuration is the only browser available, run the suite on it and report the reduced matrix prominently, per the Browser Matrix rule below. A single-browser run reported honestly is correct; a broken config is not.
 
 ## Workflow
 Read Complete Framework → Configure/Confirm Browser Matrix → Run Full Suite on Every Browser → Collect Results → For Each Failure: Diagnose Root Cause → Route to the Correct Repair Skill (if it's a framework defect) → Re-generate Only the Affected Artifact → Re-run the Affected Test on Every Browser → Repeat Until Passing or Retry Budget Exhausted → **Re-Validation Gate (if any repair modified code)** → Generate Execution Report

@@ -65,7 +65,7 @@ Spec files must comply with **POM-02** (interact only through public Page Object
 Where common/reusable logic belongs is owned by skills/knowledge/framework-architecture.md's Reusable Logic Placement section — follow it exactly. This document's enforcement:
 - **RL-01:** A Spec file never defines a reusable/common function inline — no data generators, custom wait conditions, retry wrappers, or shared setup/teardown routines written directly in a `*.spec.ts` file.
 - **RL-02:** Generic, test-lifecycle-independent helpers (formatting, random data, string/number utilities) go in `utils/`. Playwright `test.extend()` setup/teardown shared by two or more spec files goes in `fixtures/`. Shared `beforeEach()`/`afterEach()` routines reused by two or more spec files go in `hooks/`.
-- **RL-03:** `fixtures/` and `hooks/` are generated only once there is actual reusable logic to place in them — never scaffolded empty.
+- **RL-03:** `fixtures/` and `hooks/` are generated only once there is actual reusable logic to place in them — never scaffolded empty. This constrains what *this framework creates*; it says nothing about the user. A `fixtures/` or `hooks/` directory the user pre-created is a layout instruction to generate into when the need arises (see skills/knowledge/output-structure.md's Target Layout Alignment) — never delete it for being empty, and never treat it as a violation.
 - **RL-04:** A helper used by exactly one spec file, with no expectation of reuse, may stay local to that file — this rule targets duplicated/shared logic, not every local function.
 
 ## Test Data Lifecycle Rules

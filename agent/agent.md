@@ -196,9 +196,14 @@ gate is that responsibility made explicit and mandatory.
    in depth; this is the cheap existence check.)
 2. **Test runner** — a Playwright test runner is installed and executable in the
    target project (e.g. `npx playwright --version` succeeds).
-3. **Browsers** — at least two browser engines are installed and can be
-   launched. If only one is, record the reduced matrix now rather than
-   discovering it at Skill 09.
+3. **Browsers** — at least **one** browser can actually be launched. Two or more
+   is preferred, not required: restricted corporate environments frequently
+   permit only one (e.g. a manually installed MS Edge referenced by
+   `executablePath`). One browser passes this check; **zero** fails it. If only
+   one is available, record the reduced matrix here so Skill 09 doesn't
+   rediscover it and so the Execution Report reports it honestly.
+   **Never attempt to install a browser** — no `npx playwright install`, no
+   download. Browser provisioning is the user's, and may be blocked by policy.
 4. **Application** — the URL is reachable and the supplied credentials
    authenticate successfully.
 5. **Project compiles** — the target project builds/type-checks in its current
@@ -210,8 +215,14 @@ Record, and carry into `execution-state.md`:
 - Test directory and source layout the project actually uses (e.g. `src/`-based
   vs. root-based), read from `playwright.config.ts` (`testDir`) and
   `tsconfig.json` (`rootDir`/`paths`).
+- **Existing directories and their exact spelling** — if the project already has
+  `testData/`, `hooks/`, `fixtures/`, those are the destinations, spelled that
+  way. Empty ones count: a pre-created folder is the user stating where output
+  belongs. Never create a same-purpose sibling under the default name.
 - Any path alias or config import the existing setup expects.
-- Installed browsers and any already-configured `projects`/`workers`.
+- Installed browsers, and any already-configured `projects`/`workers` —
+  including `executablePath`/`channel` values, which are read and preserved
+  exactly, never rewritten (see skill-09's Never Clobber rule).
 - Runner version and how the suite is invoked.
 
 **Skills 04, 06, and 07 generate into this profile's layout**, per
