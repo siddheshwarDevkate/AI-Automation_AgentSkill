@@ -5,6 +5,14 @@
 Everything below this block is the full specification. **This block is the
 compressed version — if you retain nothing else, retain this.**
 
+## Before anything: the Preflight Gate
+
+**Verify the target can actually run tests BEFORE generating a single file** —
+runner installed, ≥2 browsers, application reachable, project compiles. Record
+the layout the project actually uses and generate into *that*. If a check fails,
+stop now, at zero cost. Discovering this at Skill 09 wastes the entire run and
+is why Skill 09 gets skipped.
+
 ## The 10 Skills, in order (never reorder, never skip)
 
 | # | Skill | What it produces |
@@ -36,7 +44,10 @@ it will invent them — which is forbidden.
    that isn't grounded in the Test Case file or the live application.
 5. **Code is not "done" until Skill 09 ran it and it passed** on every browser
    in the matrix. Static generation is not verification. If a repair changed
-   code, Skill 08 re-runs before Skill 10 sees the result.
+   code, Skill 08 re-runs before Skill 10 sees the result. Delivery is
+   mechanically blocked until `execution-report.md` has a per-browser result for
+   every Test Case ID — and generated code that won't compile is a defect
+   Skill 09 **repairs**, never a reason to stop.
 6. **Never repair a failing test by weakening it** (loosened assertion, altered
    data, swallowed exception). A real application bug is reported, never hidden.
 7. **Data that creates state needs unique values and teardown**, decided at
@@ -163,6 +174,65 @@ Never generate incorrect automation for the sake of completeness.
 ---
 
 # ==============================================================================
+# PREFLIGHT GATE — RUNS BEFORE SKILL 01
+# ==============================================================================
+
+**Purpose: fail in thirty seconds instead of after generating an entire
+framework.** Skill 09 is the only Skill whose preconditions no earlier Skill
+produces — it needs an installed runner, installed browsers, a reachable
+application, and a project that compiles. Nothing in Skills 01–08 establishes
+any of those, and Output Restrictions forbid generating `package.json`,
+`tsconfig.json`, or `playwright.config.ts`. Without this gate, a target that
+cannot run tests is only discovered at Skill 09, after all the work is done —
+at which point stopping looks like the correct action and the whole run is
+wasted.
+
+Validating prerequisites is already the Agent's job (see Role & Mission). This
+gate is that responsibility made explicit and mandatory.
+
+## Checks — all five run before Skill 01
+
+1. **Test Case file** — present, parsable, ≥1 valid row. (Skill 01 re-validates
+   in depth; this is the cheap existence check.)
+2. **Test runner** — a Playwright test runner is installed and executable in the
+   target project (e.g. `npx playwright --version` succeeds).
+3. **Browsers** — at least two browser engines are installed and can be
+   launched. If only one is, record the reduced matrix now rather than
+   discovering it at Skill 09.
+4. **Application** — the URL is reachable and the supplied credentials
+   authenticate successfully.
+5. **Project compiles** — the target project builds/type-checks in its current
+   state, *before* anything is generated into it.
+
+## Target Project Profile — the output of this gate
+
+Record, and carry into `execution-state.md`:
+- Test directory and source layout the project actually uses (e.g. `src/`-based
+  vs. root-based), read from `playwright.config.ts` (`testDir`) and
+  `tsconfig.json` (`rootDir`/`paths`).
+- Any path alias or config import the existing setup expects.
+- Installed browsers and any already-configured `projects`/`workers`.
+- Runner version and how the suite is invoked.
+
+**Skills 04, 06, and 07 generate into this profile's layout**, per
+skills/knowledge/output-structure.md's Target Layout Alignment section — not
+into a default structure that the target's own config doesn't point at.
+
+## On failure — stop here, not at Skill 09
+
+If any check fails, stop **before Skill 01** and report exactly what is missing
+and the command that fixes it. Do not generate a framework that cannot be run.
+
+**A missing runner, missing browsers, or a non-compiling target project is a
+setup problem the user resolves — but it must surface here, at zero cost, not
+after ten Skills of work.** If the user explicitly asks to generate anyway,
+knowing the suite cannot be executed, that is permitted — but the final delivery
+must be labelled **"Generated, NOT Verified"**, and Skill 10 may never mark it
+Production Ready.
+
+---
+
+# ==============================================================================
 # EXPECTED OUTPUT
 # ==============================================================================
 
@@ -183,6 +253,8 @@ maintainable and reusable · **trace every test to a supplied Test Case** ·
 # ==============================================================================
 
 ```
+00 PREFLIGHT GATE                → Target Project Profile   ✋ hard stop if it fails
+        ↓
 01 Test Case Analysis            → Test Case Model
         ↓
 02 Application Analysis          → Analysis Report + PAGE INVENTORY
@@ -255,6 +327,9 @@ file its row doesn't list should report that gap rather than silently loading it
 
 - **Always complete the current Skill before invoking the next.** Never run
   dependent Skills simultaneously.
+- **The Preflight Gate runs before Skill 01** and is itself a hard gate — no
+  Skill runs if it fails, unless the user explicitly accepts a
+  "Generated, NOT Verified" delivery.
 - **Skill 01 is a hard prerequisite gate.** No other Skill runs before it
   succeeds.
 - **Exception — bounded repair loops.** Skill 09 may re-invoke Skills 03, 04,
@@ -281,7 +356,16 @@ in this file false, stop and reconcile first.**
 ```
 # Execution State
 
+## Target Project Profile (from the Preflight Gate)
+Runner: <version> · Invoked by: <command>
+Test dir: <path from playwright.config testDir> · Source layout: <root | src/ | other>
+Path aliases/config imports the project expects: <list, or none>
+Browsers installed: <list> · Pre-configured projects/workers: <or none>
+Preflight: PASS | FAILED (<which check>) | OVERRIDDEN by user → delivery is
+"Generated, NOT Verified"
+
 ## Pipeline Progress
+- [x] 00 Preflight Gate — PASS / FAIL
 - [x] 01 Test Case Analysis — N parsed, M skipped
 - [x] 02 Application Analysis — Page Inventory: N pages
 - [ ] 03 Locator Generation — pending / in progress / done
@@ -372,9 +456,17 @@ carried-forward result as if it were freshly re-verified.**
 - ✗ Authentication fails and blocks exploration
 - ✗ Application analysis cannot be completed
 - ✗ Required project inputs unavailable
-- ✗ **The generated suite cannot be executed at all** (no runner, no browsers,
-  application unreachable) — **an unexecuted framework must never reach Skill 10
-  labeled as verified**
+- ✗ **Preflight Gate failure** — no runner, fewer than one browser, application
+  unreachable, or the target project does not compile *before* generation. Stop
+  here, at zero cost, rather than discovering it at Skill 09.
+
+**Note the boundary:** these are *environment* failures. A problem in the code
+this run generated — a broken import, a type error, a failing compile caused by
+the generated files themselves — is **not** a critical failure and never a
+reason to stop at Skill 09. It is a framework defect Skill 09 diagnoses and
+repairs under its normal routing (see its Root-Cause Diagnosis category 7).
+Preflight already proved the environment works; anything that broke after that,
+this run broke, and this run fixes.
 
 ## Non-critical — document and continue
 
@@ -395,6 +487,37 @@ Skill · continue with unaffected modules.
 ---
 
 # ==============================================================================
+# DELIVERY GATE — MECHANICAL, NOT SELF-ATTESTED
+# ==============================================================================
+
+The checklist below is a checklist: the same Agent that wants to finish is the
+one ticking its boxes. **This gate is not.** Before any framework is returned,
+open `execution-report.md` and verify by reading it:
+
+1. It exists and is non-empty.
+2. It contains a row for **every** Test Case ID in the Test Case Model — count
+   them against `execution-state.md`'s Test Case Coverage section. A missing ID
+   is a missing result, not an implied pass.
+3. Every row carries a **per-browser** status: Verified Passing, Blocked —
+   Manual Review Required, or Application Defect. A test case with no browser
+   result was not executed.
+4. The Re-Validation Gate outcome is recorded (or explicitly notes that no
+   repair modified code).
+
+**If `execution-report.md` does not exist, is empty, or is missing IDs, the
+framework is not deliverable — return to Skill 09 and execute.** Generating the
+files is not the deliverable; a verified suite is. The only exception is a
+Preflight override the user explicitly requested, in which case the delivery is
+labelled **"Generated, NOT Verified"** and says plainly that no test was ever
+run.
+
+Never write `execution-report.md` from expectation. A row in that file means a
+test actually ran and produced that result — fabricating one is a violation of
+AP-004 and AP-010 far more serious than admitting the suite wasn't executed.
+
+---
+
+# ==============================================================================
 # COMPLETION CHECKLIST
 # ==============================================================================
 
@@ -402,8 +525,12 @@ Generation is complete **only when all of the following hold.** Do not return
 partial results unless the user explicitly asked for them.
 
 **Inputs & sequencing**
+- ✓ **Preflight Gate passed** (or was explicitly overridden by the user, and the
+  delivery is labelled "Generated, NOT Verified")
 - ✓ Test Case file supplied, parsed, and yielding ≥1 automatable case
 - ✓ Skills executed in order, starting with Skill 01
+- ✓ Generated files landed in the Target Project Profile's layout, not a default
+  one the project's own config doesn't reference
 - ✓ Context preserved between Skills; Test Case IDs still attached
 
 **Artifacts**

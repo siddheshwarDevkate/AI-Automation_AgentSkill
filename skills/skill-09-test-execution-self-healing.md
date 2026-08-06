@@ -46,8 +46,11 @@ For every failing test, classify the failure before touching anything:
 4. **Test data conflict** — stale/duplicate/invalid data causes a false failure (e.g. "record already exists").
 5. **Flakiness** — inconsistent timing/race condition, not a real defect; fix with proper Playwright waiting (per skills/knowledge/playwright-best-practices.md), never with `waitForTimeout()`.
 6. **Genuine application defect** — the application's actual behaviour contradicts the test case's `expectedResult`, confirmed by direct observation against the live app.
+7. **Build/compile defect** — the suite doesn't run because the generated code doesn't compile or resolve: a broken import, a missing module, a type error, a path that doesn't match the project's actual layout. **This is a framework defect, not an environment failure**, and it is repaired here like any other.
 
-Only categories 1–5 are repaired by this Skill. Category 6 is never repaired — see the Strict Repair Rule below.
+Only categories 1–5 and 7 are repaired by this Skill. Category 6 is never repaired — see the Strict Repair Rule below.
+
+**Category 7 is the one most often misclassified as "cannot execute."** The Preflight Gate (agent/agent.md) already proved the runner, browsers, and application work and that the project compiled *before* generation. So a compile or import failure now means this run introduced it — most commonly by generating into a folder layout the project's own `playwright.config.ts`/`tsconfig.json` doesn't point at. Fix the generated code or its paths to match the Target Project Profile; do not report it as a Critical Failure and stop.
 
 ## Repair Routing
 | Root Cause | Re-invoke | Scope of Change |
@@ -57,6 +60,7 @@ Only categories 1–5 are repaired by this Skill. Category 6 is never repaired �
 | Assertion mismatch (framework-side) | Skill 05 — Assertion Generation | Only the affected verification method |
 | Test data conflict | Skill 06 — Test Data Generation (+ Skill 07 if teardown wiring is missing) | The affected dataset in `testData.ts`, and the spec's teardown if that's the gap |
 | Flakiness | Skill 04/07 — replace hard waits with proper Playwright waiting | Only the affected method/test |
+| Build/compile defect | Skill 04/06/07 — whichever generated the offending file | Only the broken import/path/type, realigned to the Target Project Profile |
 
 After a repair, re-run only the affected test(s) on every browser before moving on — don't re-run the entire suite unless the fix touched shared code (BasePage, a shared component, a shared dataset).
 
@@ -97,7 +101,17 @@ Cross-reference the Execution Report against the Test Case Model (per Skill 01) 
 Full suite executed on every browser in the matrix · execution capped at 2 concurrent workers · every failure diagnosed before any repair attempt · repairs scoped to the correct Skill and artifact only · data collisions repaired as lifecycle gaps, not literal edits · genuine application defects documented, never masked · retry budget respected · **Re-Validation Gate run whenever a repair modified code, with its outcome recorded** · Execution Report complete and cross-referenced against the Test Case Model.
 
 ## Failure Handling
-If the suite cannot be executed at all (missing runner, browsers not installed, application unreachable), stop and report this as a Critical Failure — do not hand an unexecuted framework to Skill 10 as if it were verified. If only specific test cases are blocked after the retry budget, that is a non-critical failure — document them and continue.
+
+**"Cannot be executed" means the environment is gone, not that the code is broken.** This distinction is the difference between stopping correctly and quitting on work you were supposed to do.
+
+**Critical Failure — stop and report.** Only when the environment itself is unavailable: the runner has disappeared, no browser can launch, or the application is unreachable. The Preflight Gate verified all three before generation began, so this means something changed underneath the run. Do not hand an unexecuted framework to Skill 10 as if it were verified.
+
+**Not a Critical Failure — repair it.** Anything wrong with the code this run produced: it doesn't compile, an import doesn't resolve, a config points at a path the generated files don't occupy, a type error. That is Root Cause 7, and it is this Skill's job. Preflight proved the project compiled before generation; if it doesn't compile now, this run broke it and this run fixes it. **Stopping here and reporting "the suite cannot be executed" is the single most common way this Skill gets skipped — it is not a valid exit.**
+
+If only specific test cases are blocked after the retry budget, that is a non-critical failure — document them and continue.
+
+## This Skill Is Not Optional
+Generating the files is not the deliverable. A framework that has never been executed is unverified regardless of how correct it looks, and agent/agent.md's Delivery Gate mechanically blocks handover until `execution-report.md` contains a per-browser result for every Test Case ID. If this Skill is reached and does not run the suite, the pipeline has failed — there is no state in which producing Skills 01–08's output and stopping is a complete run.
 
 ## Consumed By
 Skill 10 — Framework Review

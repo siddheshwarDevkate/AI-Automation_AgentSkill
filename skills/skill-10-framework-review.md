@@ -72,6 +72,7 @@ Choose one, weighted primarily by the Execution Summary:
 - **Production Ready with Minor Improvements** — all automated test cases Verified Passing, but with non-blocking maintainability/style recommendations, or a small number of "Not Automated" cases with legitimate (e.g. app doesn't support it) reasons.
 - **Requires Review Before Production** — one or more test cases Blocked or flagged as an Application Defect; needs human review before shipping.
 - **Not Ready for Production** — significant execution failures, broken traceability, repairs that violated the Strict Repair Rule, or code-modifying repairs that were never re-validated.
+- **Generated, NOT Verified** — the user explicitly overrode a failed Preflight Gate, so the suite was never executed. State plainly that no test has been run and that coverage numbers describe generated code only. This framework can never be reported as Production Ready, regardless of how clean the static review is.
 
 Always state the decision alongside both the Test Case coverage and Execution Summary numbers, e.g. "18 of 20 test cases automated; 17 of 18 Verified Passing on Chromium/Firefox/WebKit; 1 Blocked (TC-014, see Execution Report)."
 

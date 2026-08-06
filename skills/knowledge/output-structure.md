@@ -25,6 +25,19 @@ project-root/
 ```
 Only add folders when explicitly required. **Exception:** `fixtures/` and `hooks/` are added automatically, without a separate explicit request, the first time reusable setup/teardown logic needs extracting out of a spec file — see skills/knowledge/framework-architecture.md's Reusable Logic Placement section. Never scaffold either one empty.
 
+## Target Layout Alignment (Critical)
+**The structure above is the default, not an override.** When generating into an existing project, the Preflight Gate's Target Project Profile (see agent/agent.md) records the layout that project actually uses — and the generated files go *there*.
+
+Concretely, before generating anything:
+- Use the `testDir` from the project's existing `playwright.config.ts` as the spec destination. If it says `./src/tests`, specs go in `src/tests/` — not `tests/`.
+- Respect `rootDir` and any `paths` aliases in `tsconfig.json`. If the project resolves imports through an alias (`@pages/*`), generated imports use it rather than fragile relative paths.
+- Mirror the project's existing source convention (`src/`-based vs. root-based) for `pages/`, `utils/`, `fixtures/`, `hooks/`, and `test-data/`.
+- Honour any config import the existing setup expects (e.g. a `config/env.config` module the project's `playwright.config.ts` imports). If that module is missing, report it at Preflight as a blocking setup gap — never generate around it and never leave the project in a state where its own config can't resolve.
+
+**Generating the default layout into a project whose config points elsewhere produces a framework that cannot run** — the specs exist, but the runner never finds them, or the config fails to resolve and nothing compiles. That failure surfaces at Skill 09 as "the suite cannot be executed," which is the wrong diagnosis: the environment is fine, the files are simply in the wrong place. Skill 09 treats it as Root Cause 7 (build/compile defect) and realigns the paths — but aligning here, up front, avoids it entirely.
+
+When no existing project layout is detectable, use the default structure above.
+
 ## File Generation Order
 BasePage → Page Objects → Utilities → Test Data → Test Specifications. Never generate test files before their required Page Objects exist. `fixtures/`/`hooks/` files are produced alongside Test Specifications, only at the point Spec Generation (Skill 07) identifies logic that two or more spec files need to share — never generated speculatively ahead of that need.
 
