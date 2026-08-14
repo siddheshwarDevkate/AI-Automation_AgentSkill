@@ -29,8 +29,15 @@ flowchart LR
 
     A2 --> OUT
 
-    OUT["PRODUCTION-READY FRAMEWORK<br/>pages / tests / test-data / utils<br/>traceability + execution reports<br/>—<br/>compiled, executed, passing"]
+    OUT["GENERATED FRAMEWORK<br/>pages / tests / test-data / utils<br/>traceability + execution reports<br/>—<br/>compiled, executed, passing"]
+
+    OUT --> RV
+
+    RV["CODE REVIEW<br/>—<br/>HUMAN REVIEW POINT 2<br/>engineer reviews framework and code<br/>structure, locators, coverage<br/>approve or send back"]
 ```
+
+**Two human checkpoints:** test cases are approved before any code is written,
+and the generated framework is reviewed before it is accepted.
 
 <details>
 <summary><b>Plain-text version</b> (if the diagram above does not render in your viewer)</summary>
@@ -62,10 +69,16 @@ AGENT 2  —  FRAMEWORK GENERATION   (10 skills)
     executes the suite for real and self-heals its own defects
         |
         v
-PRODUCTION-READY FRAMEWORK
+GENERATED FRAMEWORK
     pages/  tests/  test-data/  utils/  fixtures/  hooks/
     traceability-report · execution-report · README
     [OK] compiled     [OK] executed     [OK] passing
+        |
+        v
+CODE REVIEW   <====  HUMAN REVIEW POINT 2
+    engineer reviews the generated framework and code
+    structure · locators · coverage · reports
+    approve, or send back for regeneration
 
 
 TRACEABILITY CHAIN
@@ -84,80 +97,73 @@ so it stays reviewable and editable before automation is generated from it.
 ## Diagram 2 — Architecture
 
 ```mermaid
-flowchart TB
-    subgraph CONN["CONNECTOR LAYER — MCP"]
-        direction LR
-        M1["Jira MCP"]
-        M2["Confluence / Wiki"]
-        M3["Document reader"]
-        M4["Playwright MCP — browser"]
+flowchart LR
+    subgraph CONN["MCP LAYER"]
+        direction TB
+        M1["Jira<br/>user stories"]
+        M2["Confluence<br/>wiki pages"]
+        M3["Doc reader<br/>functional specs"]
+        M4["Playwright MCP<br/>live browser"]
     end
 
     subgraph AG1["AGENT 1 — Test Case Generation"]
-        direction LR
-        O1["ORCHESTRATOR<br/>sequences the work<br/>validates prerequisites<br/>never writes content itself"]
-        S1["SKILLS<br/>read story, docs, wiki<br/>explore app<br/>reconcile sources<br/>write structured test cases"]
-        K1["KNOWLEDGE + TEMPLATES<br/>test case format<br/>field schema, coverage rules<br/>no-fabrication rules"]
+        direction TB
+        O1["ORCHESTRATOR<br/>sequences work<br/>validates inputs<br/>writes nothing itself"]
+        S1["SKILLS<br/>read story / docs<br/>explore the app<br/>reconcile sources"]
+        K1["KNOWLEDGE<br/>test case format<br/>coverage rules<br/>no-fabrication"]
     end
 
-    TCF["TEST CASE FILE — human review point"]
+    TCF["TEST CASE FILE<br/>.xlsx / .csv<br/>—<br/>HUMAN REVIEW 1<br/>BA / QA check scope<br/>before automating"]
 
     subgraph AG2["AGENT 2 — Framework Generation"]
-        direction LR
-        O2["ORCHESTRATOR<br/>preflight gate<br/>skill dependency matrix<br/>delivery gate"]
-        S2["10 SKILLS<br/>parse, explore, locators, pages<br/>assertions, data, specs<br/>validate, execute, review"]
-        K2["10 KNOWLEDGE + 4 TEMPLATES<br/>locator strategy<br/>Playwright practice<br/>TypeScript standards, POM"]
+        direction TB
+        O2["ORCHESTRATOR<br/>preflight gate<br/>dependency matrix<br/>delivery gate"]
+        S2["10 SKILLS<br/>locators · pages<br/>assertions · data<br/>specs · execute"]
+        K2["KNOWLEDGE + TEMPLATES<br/>locator strategy<br/>POM · TS standards"]
     end
 
-    OUT2["COMPILED — EXECUTED — VERIFIED FRAMEWORK"]
+    FW["FRAMEWORK<br/>pages · tests · test-data<br/>traceability + execution reports<br/>—<br/>compiled, executed, passing"]
+
+    RV2["HUMAN REVIEW 2<br/>CODE REVIEW<br/>—<br/>structure · locators<br/>coverage · reports<br/>approve or send back"]
 
     CONN --> AG1
     AG1 --> TCF
     TCF --> AG2
-    AG2 --> OUT2
+    AG2 --> FW
+    FW --> RV2
+    RV2 -. "feedback: regenerate the<br/>affected artefact only" .-> AG2
 ```
 
 <details>
 <summary><b>Plain-text version</b> (if the diagram above does not render in your viewer)</summary>
 
 ```text
-=====================================================================
-  CONNECTOR LAYER  —  MCP
-    Jira MCP  |  Confluence / Wiki  |  Doc reader  |  Playwright MCP
-=====================================================================
-                              |
-                              v
-=====================================================================
-  AGENT 1  —  TEST CASE GENERATION
----------------------------------------------------------------------
-  ORCHESTRATOR        SKILLS               KNOWLEDGE + TEMPLATES
-  sequences work      read story           test case format
-  validates inputs    read docs / wiki     field schema
-  writes nothing      explore the app      coverage rules
-  itself              reconcile sources    no-fabrication rules
-                      write test cases     output template
-=====================================================================
-                              |
-                              v
-              +-----------------------------------+
-              |  TEST CASE FILE                   |
-              |  HUMAN REVIEW POINT               |
-              +-----------------------------------+
-                              |
-                              v
-=====================================================================
-  AGENT 2  —  FRAMEWORK GENERATION
----------------------------------------------------------------------
-  ORCHESTRATOR        10 SKILLS            10 KNOWLEDGE + 4 TEMPLATES
-  preflight gate      parse · explore      locator strategy
-  dependency matrix   locators · pages     Playwright practice
-  delivery gate       assertions · data    TypeScript standards
-  writes no code      specs · validate     naming · POM rules
-  itself              execute · review     page / spec templates
-=====================================================================
-                              |
-                              v
-        [OK] compiled   [OK] executed   [OK] verified framework
+ MCP LAYER        AGENT 1          REVIEW 1        AGENT 2         FRAMEWORK       REVIEW 2
+                Test Case Gen                   Framework Gen                    Code Review
+
+  Jira        ORCHESTRATOR      TEST CASE      ORCHESTRATOR     pages/ tests/    HUMAN
+  stories     sequences work    FILE           preflight gate   test-data/       REVIEW 2
+              validates in      .xlsx/.csv     dep. matrix      utils/ hooks/
+  Confluence  writes nothing                   delivery gate                     engineer
+  wiki                          ---------                       traceability     reviews
+              -------------     HUMAN          -------------    + execution      the code
+  Doc         SKILLS            REVIEW 1       10 SKILLS        reports
+  reader      read story/docs                  locators/pages                    structure
+  specs       explore the app   BA / QA        assertions/data  -------------    locators
+              reconcile         check scope    specs/execute    [OK] compiled    coverage
+  Playwright  sources           and coverage                    [OK] executed
+  MCP                                          -------------    [OK] passing     approve
+  live        -------------     before         KNOWLEDGE +                       or send
+  browser     KNOWLEDGE         automating     TEMPLATES                         back
+              test case fmt                    locator strategy
+              coverage rules                   POM, TS standards
+              no-fabrication
+
+     |              |               |                |               |               |
+     +------------->+-------------->+--------------->+-------------->+-------------->+
+                                                     ^
+                                                     |
+              feedback: regenerate the affected artefact only -------+
 
 
 THE PATTERN, IN ONE LINE
@@ -165,6 +171,7 @@ THE PATTERN, IN ONE LINE
     the knowledge files decide HOW WELL
     the templates decide WHAT SHAPE
     the skills are the only layer that produces output
+    and a human signs off at both ends
 ```
 
 </details>
@@ -172,6 +179,11 @@ THE PATTERN, IN ONE LINE
 Both agents share the same three-part pattern — orchestrator, skills, knowledge —
 so the second was far cheaper to build than the first, and either can be extended
 without touching the other.
+
+The two review points matter as much as the automation: a human approves the test
+cases before any code is written, and reviews the generated framework before it is
+accepted. Review feedback regenerates only the affected artefact, not the whole
+framework.
 
 ---
 
