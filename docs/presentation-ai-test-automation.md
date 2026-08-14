@@ -32,6 +32,48 @@ flowchart LR
     OUT["PRODUCTION-READY FRAMEWORK<br/>pages / tests / test-data / utils<br/>traceability + execution reports<br/>—<br/>compiled, executed, passing"]
 ```
 
+<details>
+<summary><b>Plain-text version</b> (if the diagram above does not render in your viewer)</summary>
+
+```text
+SOURCES
+    Jira user stories
+    Functional documents
+    Wiki / Confluence pages
+    Live application  ..............  explored via Playwright MCP
+        |
+        v
+AGENT 1  —  TEST CASE GENERATION
+    reads the user story, functional docs and wiki pages
+    explores the live application to observe real behaviour
+    reconciles all sources, flags contradictions
+    writes structured test cases
+        |
+        v
+TEST CASE FILE  (.xlsx / .csv)   <====  HUMAN REVIEW POINT
+    ID · module · preconditions · steps · data · expected result
+    reviewed and signed off by BA / QA before any automation is built
+        |
+        v
+AGENT 2  —  FRAMEWORK GENERATION   (10 skills)
+    discovers stable locators from the live DOM
+    generates Page Objects, assertions, test data, specs
+    validates every rule, then compiles the code
+    executes the suite for real and self-heals its own defects
+        |
+        v
+PRODUCTION-READY FRAMEWORK
+    pages/  tests/  test-data/  utils/  fixtures/  hooks/
+    traceability-report · execution-report · README
+    [OK] compiled     [OK] executed     [OK] passing
+
+
+TRACEABILITY CHAIN
+    user story  ->  test case ID  ->  automated test
+```
+
+</details>
+
 **Traceability chain:** user story → test case ID → automated test.
 
 The test case file is deliberately a visible artefact rather than an internal hand-off,
@@ -74,6 +116,58 @@ flowchart TB
     TCF --> AG2
     AG2 --> OUT2
 ```
+
+<details>
+<summary><b>Plain-text version</b> (if the diagram above does not render in your viewer)</summary>
+
+```text
+=====================================================================
+  CONNECTOR LAYER  —  MCP
+    Jira MCP  |  Confluence / Wiki  |  Doc reader  |  Playwright MCP
+=====================================================================
+                              |
+                              v
+=====================================================================
+  AGENT 1  —  TEST CASE GENERATION
+---------------------------------------------------------------------
+  ORCHESTRATOR        SKILLS               KNOWLEDGE + TEMPLATES
+  sequences work      read story           test case format
+  validates inputs    read docs / wiki     field schema
+  writes nothing      explore the app      coverage rules
+  itself              reconcile sources    no-fabrication rules
+                      write test cases     output template
+=====================================================================
+                              |
+                              v
+              +-----------------------------------+
+              |  TEST CASE FILE                   |
+              |  HUMAN REVIEW POINT               |
+              +-----------------------------------+
+                              |
+                              v
+=====================================================================
+  AGENT 2  —  FRAMEWORK GENERATION
+---------------------------------------------------------------------
+  ORCHESTRATOR        10 SKILLS            10 KNOWLEDGE + 4 TEMPLATES
+  preflight gate      parse · explore      locator strategy
+  dependency matrix   locators · pages     Playwright practice
+  delivery gate       assertions · data    TypeScript standards
+  writes no code      specs · validate     naming · POM rules
+  itself              execute · review     page / spec templates
+=====================================================================
+                              |
+                              v
+        [OK] compiled   [OK] executed   [OK] verified framework
+
+
+THE PATTERN, IN ONE LINE
+    the orchestrator decides WHEN
+    the knowledge files decide HOW WELL
+    the templates decide WHAT SHAPE
+    the skills are the only layer that produces output
+```
+
+</details>
 
 Both agents share the same three-part pattern — orchestrator, skills, knowledge —
 so the second was far cheaper to build than the first, and either can be extended
