@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1220 560" role="img" aria-label="End to end flow. Jira user stories, functional documents, wiki pages and the live application feed Agent One, which generates structured test cases. Those test cases feed Agent Two, which generates a Playwright framework that is compiled, executed and verified.">
+  <rect width="100%" height="100%" fill="#0A1016"/>
+  <defs>
+    <marker id="f1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#5AB0EA"/></marker>
+    <marker id="f2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#48C48A"/></marker>
+    <marker id="f3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#B9A6E4"/></marker>
+  </defs>
+
+  <text x="610" y="40" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="22" fill="#E4EBF1">Requirement to executed automation — no manual authoring step</text>
+
+  <!-- SOURCES -->
+  <text x="40" y="88" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#71808A" letter-spacing=".14em">SOURCES</text>
+  <g font-family="ui-monospace,Menlo,monospace" font-size="14.5" fill="#D6E1E8">
+    <rect x="40" y="102" width="215" height="52" rx="3" fill="#141F28" stroke="#2A3B47"/><text x="60" y="133">Jira user stories</text>
+    <rect x="40" y="164" width="215" height="52" rx="3" fill="#141F28" stroke="#2A3B47"/><text x="60" y="195">Functional docs</text>
+    <rect x="40" y="226" width="215" height="52" rx="3" fill="#141F28" stroke="#2A3B47"/><text x="60" y="257">Wiki / Confluence</text>
+    <rect x="40" y="288" width="215" height="52" rx="3" fill="#141F28" stroke="#2A3B47"/><text x="60" y="313">Live application</text><text x="60" y="331" font-size="12" fill="#8798A4">via Playwright MCP</text>
+  </g>
+  <line x1="255" y1="221" x2="292" y2="221" stroke="#5AB0EA" stroke-width="1.8" marker-end="url(#f1)"/>
+
+  <!-- AGENT 1 -->
+  <rect x="298" y="102" width="250" height="238" rx="4" fill="#0F1E2B" stroke="#5AB0EA" stroke-width="2"/>
+  <text x="423" y="132" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="17" fill="#5AB0EA">AGENT 1</text>
+  <text x="423" y="154" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#B9CBD8">Test Case Generation</text>
+  <g font-family="ui-monospace,Menlo,monospace" font-size="13.5" fill="#9FB3C0">
+    <text x="318" y="188">· reads the user story</text>
+    <text x="318" y="214">· reads functional docs</text>
+    <text x="318" y="240">· reads wiki pages</text>
+    <text x="318" y="266">· explores the live app</text>
+    <text x="318" y="292">· cross-references all</text>
+    <text x="318" y="316">· writes structured TCs</text>
+  </g>
+  <line x1="548" y1="221" x2="585" y2="221" stroke="#5AB0EA" stroke-width="1.8" marker-end="url(#f1)"/>
+
+  <!-- HANDOFF -->
+  <rect x="591" y="152" width="200" height="138" rx="4" fill="#1B1630" stroke="#8C74C8" stroke-width="1.8"/>
+  <text x="691" y="184" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="15" fill="#B9A6E4">TEST CASES</text>
+  <text x="691" y="208" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#9585BE">.xlsx / .csv</text>
+  <text x="691" y="240" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="12.5" fill="#9585BE">reviewable by BA / QA</text>
+  <text x="691" y="264" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="12.5" fill="#9585BE">the human checkpoint</text>
+  <line x1="791" y1="221" x2="828" y2="221" stroke="#48C48A" stroke-width="1.8" marker-end="url(#f2)"/>
+
+  <!-- AGENT 2 -->
+  <rect x="834" y="102" width="250" height="238" rx="4" fill="#0E2119" stroke="#48C48A" stroke-width="2"/>
+  <text x="959" y="132" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="17" fill="#48C48A">AGENT 2</text>
+  <text x="959" y="154" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#B4D3C4">Framework Generation</text>
+  <g font-family="ui-monospace,Menlo,monospace" font-size="13.5" fill="#9CBFAD">
+    <text x="854" y="188">· locators from live DOM</text>
+    <text x="854" y="214">· Page Objects</text>
+    <text x="854" y="240">· assertions + test data</text>
+    <text x="854" y="266">· specs, 1 per test case</text>
+    <text x="854" y="292">· compile + execute</text>
+    <text x="854" y="316">· self-heal + sign off</text>
+  </g>
+  <line x1="959" y1="340" x2="959" y2="382" stroke="#48C48A" stroke-width="2" marker-end="url(#f2)"/>
+
+  <!-- OUTPUT -->
+  <rect x="591" y="386" width="380" height="132" rx="4" fill="#0E2119" stroke="#48C48A" stroke-width="2"/>
+  <text x="781" y="418" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="15.5" fill="#48C48A" letter-spacing=".08em">GENERATED FRAMEWORK</text>
+  <text x="781" y="446" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#C6DCD1">pages · tests · test-data · utils</text>
+  <text x="781" y="468" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#C6DCD1">traceability + execution reports</text>
+  <text x="781" y="500" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="15" fill="#48C48A">✓ compiled ✓ executed ✓ passing</text>
+
+  <line x1="971" y1="452" x2="1008" y2="452" stroke="#B9A6E4" stroke-width="1.8" marker-end="url(#f3)"/>
+
+  <!-- REVIEW 2 -->
+  <rect x="1014" y="386" width="167" height="132" rx="4" fill="#1B1630" stroke="#8C74C8" stroke-width="2"/>
+  <text x="1097" y="416" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="14.5" fill="#D9C9F5">HUMAN REVIEW 2</text>
+  <text x="1097" y="440" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="13.5" fill="#B9A6E4">CODE REVIEW</text>
+  <text x="1097" y="466" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#9585BE">engineer reviews the</text>
+  <text x="1097" y="484" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="12" fill="#9585BE">framework and code</text>
+  <text x="1097" y="506" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="12.5" fill="#D9C9F5">approve or send back</text>
+
+  <!-- TRACEABILITY BAR -->
+  <line x1="40" y1="386" x2="40" y2="500" stroke="#5AB0EA" stroke-width="2"/>
+  <text x="60" y="416" font-family="ui-monospace,Menlo,monospace" font-size="14.5" fill="#5AB0EA">TRACEABILITY</text>
+  <text x="60" y="442" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#8FA7B6">user story →</text>
+  <text x="60" y="464" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#8FA7B6">test case ID →</text>
+  <text x="60" y="486" font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#8FA7B6">automated test</text>
+
+  <text x="610" y="546" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="14" fill="#B9A6E4">two human checkpoints — test cases approved before code is written, code approved before it is accepted</text>
+</svg>

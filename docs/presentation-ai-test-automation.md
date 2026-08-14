@@ -8,7 +8,23 @@ automation with no manual authoring step in between.
 
 ---
 
+> **For slides:** ready-made image files live in [`docs/diagrams/`](diagrams/).
+> Download the `.svg` and use **Insert → Pictures → This Device** in PowerPoint —
+> SVG stays sharp at any size, so there is no need to screenshot anything.
+>
+> | File | Size | Use for |
+> |---|---|---|
+> | [`01-end-to-end-flow.svg`](diagrams/01-end-to-end-flow.svg) | 1220 × 560 | the flow slide |
+> | [`02-architecture.svg`](diagrams/02-architecture.svg) | 1280 × 730 (16:9) | the architecture slide |
+
+---
+
 ## Diagram 1 — End-to-end flow
+
+![End-to-end flow](diagrams/01-end-to-end-flow.svg)
+
+<details>
+<summary>Mermaid source (editable)</summary>
 
 ```mermaid
 flowchart LR
@@ -35,6 +51,8 @@ flowchart LR
 
     RV["CODE REVIEW<br/>—<br/>HUMAN REVIEW POINT 2<br/>engineer reviews framework and code<br/>structure, locators, coverage<br/>approve or send back"]
 ```
+
+</details>
 
 **Two human checkpoints:** test cases are approved before any code is written,
 and the generated framework is reviewed before it is accepted.
@@ -96,74 +114,97 @@ so it stays reviewable and editable before automation is generated from it.
 
 ## Diagram 2 — Architecture
 
+Laid out as two phases so it fits a 16:9 slide.
+
+![Architecture](diagrams/02-architecture.svg)
+
+<details>
+<summary>Mermaid source (editable)</summary>
+
 ```mermaid
-flowchart LR
-    subgraph CONN["MCP LAYER"]
-        direction TB
-        M1["Jira<br/>user stories"]
-        M2["Confluence<br/>wiki pages"]
-        M3["Doc reader<br/>functional specs"]
-        M4["Playwright MCP<br/>live browser"]
+flowchart TB
+    subgraph P1["PHASE 1 — UNDERSTAND &amp; SPECIFY"]
+        direction LR
+        CONN["MCP LAYER<br/>Jira — user stories<br/>Confluence — wiki<br/>Doc reader — specs<br/>Playwright MCP"]
+        subgraph AG1["AGENT 1 — Test Case Generation"]
+            direction LR
+            O1["ORCHESTRATOR<br/>sequences work<br/>validates inputs<br/>writes nothing itself"]
+            S1["SKILLS<br/>read story / docs<br/>explore the app<br/>reconcile sources"]
+            K1["KNOWLEDGE<br/>test case format<br/>coverage rules<br/>no-fabrication"]
+        end
+        TCF["TEST CASE FILE<br/>.xlsx / .csv<br/>—<br/>HUMAN REVIEW 1<br/>BA / QA check scope<br/>before any code exists"]
+        CONN --> AG1 --> TCF
     end
 
-    subgraph AG1["AGENT 1 — Test Case Generation"]
-        direction TB
-        O1["ORCHESTRATOR<br/>sequences work<br/>validates inputs<br/>writes nothing itself"]
-        S1["SKILLS<br/>read story / docs<br/>explore the app<br/>reconcile sources"]
-        K1["KNOWLEDGE<br/>test case format<br/>coverage rules<br/>no-fabrication"]
+    subgraph P2["PHASE 2 — BUILD &amp; VERIFY"]
+        direction LR
+        subgraph AG2["AGENT 2 — Framework Generation"]
+            direction LR
+            O2["ORCHESTRATOR<br/>preflight gate<br/>dependency matrix<br/>delivery gate"]
+            S2["10 SKILLS<br/>locators · pages<br/>assertions · data<br/>specs · execute"]
+            K2["KNOWLEDGE + TEMPLATES<br/>locator strategy<br/>POM · TS rules<br/>code templates"]
+        end
+        FW["FRAMEWORK<br/>pages · tests · utils<br/>test-data · fixtures<br/>traceability + execution<br/>—<br/>compiled, executed, passing"]
+        RV2["HUMAN REVIEW 2<br/>CODE REVIEW<br/>—<br/>structure · locators<br/>coverage · reports<br/>approve or send back"]
+        AG2 --> FW --> RV2
     end
 
-    TCF["TEST CASE FILE<br/>.xlsx / .csv<br/>—<br/>HUMAN REVIEW 1<br/>BA / QA check scope<br/>before automating"]
-
-    subgraph AG2["AGENT 2 — Framework Generation"]
-        direction TB
-        O2["ORCHESTRATOR<br/>preflight gate<br/>dependency matrix<br/>delivery gate"]
-        S2["10 SKILLS<br/>locators · pages<br/>assertions · data<br/>specs · execute"]
-        K2["KNOWLEDGE + TEMPLATES<br/>locator strategy<br/>POM · TS standards"]
-    end
-
-    FW["FRAMEWORK<br/>pages · tests · test-data<br/>traceability + execution reports<br/>—<br/>compiled, executed, passing"]
-
-    RV2["HUMAN REVIEW 2<br/>CODE REVIEW<br/>—<br/>structure · locators<br/>coverage · reports<br/>approve or send back"]
-
-    CONN --> AG1
-    AG1 --> TCF
-    TCF --> AG2
-    AG2 --> FW
-    FW --> RV2
-    RV2 -. "feedback: regenerate the<br/>affected artefact only" .-> AG2
+    P1 -- "approved test cases<br/>feed the build phase" --> P2
+    RV2 -. "feedback: regenerate<br/>only the affected artefact" .-> AG2
 ```
+
+</details>
 
 <details>
 <summary><b>Plain-text version</b> (if the diagram above does not render in your viewer)</summary>
 
 ```text
- MCP LAYER        AGENT 1          REVIEW 1        AGENT 2         FRAMEWORK       REVIEW 2
-                Test Case Gen                   Framework Gen                    Code Review
+PHASE 1  —  UNDERSTAND & SPECIFY
+===================================================================
 
-  Jira        ORCHESTRATOR      TEST CASE      ORCHESTRATOR     pages/ tests/    HUMAN
-  stories     sequences work    FILE           preflight gate   test-data/       REVIEW 2
-              validates in      .xlsx/.csv     dep. matrix      utils/ hooks/
-  Confluence  writes nothing                   delivery gate                     engineer
-  wiki                          ---------                       traceability     reviews
-              -------------     HUMAN          -------------    + execution      the code
-  Doc         SKILLS            REVIEW 1       10 SKILLS        reports
-  reader      read story/docs                  locators/pages                    structure
-  specs       explore the app   BA / QA        assertions/data  -------------    locators
-              reconcile         check scope    specs/execute    [OK] compiled    coverage
-  Playwright  sources           and coverage                    [OK] executed
-  MCP                                          -------------    [OK] passing     approve
-  live        -------------     before         KNOWLEDGE +                       or send
-  browser     KNOWLEDGE         automating     TEMPLATES                         back
-              test case fmt                    locator strategy
-              coverage rules                   POM, TS standards
-              no-fabrication
+  MCP LAYER          AGENT 1 — Test Case Generation      TEST CASE FILE
+  ---------          ------------------------------      --------------
+  Jira               ORCHESTRATOR   sequences work       .xlsx / .csv
+    user stories                    validates inputs
+  Confluence                        writes nothing       --------------
+    wiki pages                                           HUMAN REVIEW 1
+  Doc reader         SKILLS         read story / docs    --------------
+    functional specs                explore the app      BA / QA check
+  Playwright MCP                    reconcile sources    scope + coverage
+    live browser
+                     KNOWLEDGE      test case format     before any
+                                    coverage rules       code exists
+                                    no-fabrication
 
-     |              |               |                |               |               |
-     +------------->+-------------->+--------------->+-------------->+-------------->+
-                                                     ^
-                                                     |
-              feedback: regenerate the affected artefact only -------+
+        +----------------> +----------------------> +
+                                                    |
+              approved test cases feed the build phase
+        +<--------------------------------------------------+
+        |
+        v
+PHASE 2  —  BUILD & VERIFY
+===================================================================
+
+  AGENT 2 — Framework Generation          FRAMEWORK        CODE REVIEW
+  ------------------------------          ---------        -----------
+  ORCHESTRATOR   preflight gate           pages · tests    HUMAN REVIEW 2
+                 dependency matrix        utils · fixtures -----------
+                 delivery gate            test-data        engineer reviews
+                                                           the generated
+  10 SKILLS      locators · pages         traceability     framework
+                 assertions · data        + execution
+                 specs · validate         reports          structure
+                 execute · review                          locators
+                                          -------------    coverage
+  KNOWLEDGE +    locator strategy         [OK] compiled    reports
+  TEMPLATES      POM · TS rules           [OK] executed    -----------
+                 code templates           [OK] passing     approve
+                                                           or send back
+
+        +----------------> +----------------------> +
+        ^                                           |
+        |    feedback: regenerate only the          |
+        +--- affected artefact <--------------------+
 
 
 THE PATTERN, IN ONE LINE
