@@ -12,7 +12,7 @@ Entry point for generating a production-ready Playwright automation framework fr
 ## EXECUTION
 Resolve the resource root — `.claude/` if it exists in the project root, otherwise `.opencode/` — then read and follow `<resource-root>/agent/agent.md`. Pass the complete user request to it without modification, interpretation, or filtering.
 
-The Agent's first action is its **Intake Gate**: it asks the user for the application URL, the credentials and exact login steps, and confirmation that the Test Case file is in `<resource-root>/input/` as CSV. Do not pre-empt, answer, or skip those questions on the user's behalf.
+The Agent's first action is its **Intake Gate**: it asks the user for the application URL, the credentials and exact login steps, and confirmation that the Test Case file is in `<resource-root>/input/` as CSV. **Each of the three is a hard stop** — an unanswered one ends the run at the question rather than partway through generation. Do not pre-empt, answer, guess, or placeholder them on the user's behalf, and do not invoke the Agent expecting to supply them later.
 
 ## BOUNDARIES
 This command performs no parsing, analysis, generation, validation, or review itself, and does not load Knowledge or Template files directly. Every responsibility — the Intake Gate, required inputs, expected output, Skill sequencing, failure handling — is owned entirely by `<resource-root>/agent/agent.md`. Refer there for anything beyond "what triggers the pipeline."

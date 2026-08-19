@@ -10,7 +10,10 @@ compressed version — if you retain nothing else, retain this.**
 **First, ask the three Intake questions** — application URL, credentials + the
 exact login steps, and confirmation that the Test Case file is sitting in
 `<resource-root>/input/` as CSV. Ask them up front, in one message, before any
-tool call. Everything downstream needs all three, and none of them is guessable.
+tool call. **Each one is a hard stop: an unanswered question ends the run there,
+with the question.** None of the three is guessable, and none may be
+placeholdered — a guess doesn't avoid the stop, it just moves it to Skill 09,
+after everything has been generated.
 
 **Then Skill 00 verifies the target can actually run tests BEFORE generating a
 single file** — runner installed, ≥1 browser, application reachable, project
@@ -245,7 +248,7 @@ Never generate incorrect automation for the sake of completeness.
 ---
 
 # ==============================================================================
-# INTAKE GATE — THE FIRST THING THAT HAPPENS
+# INTAKE GATE — HARD STOP · THE FIRST THING THAT HAPPENS
 # ==============================================================================
 
 **When this Agent is triggered, ask these three questions before running a
@@ -253,16 +256,29 @@ single tool.** Not after exploring the repo, not after reading the Test Case
 file, not "if it seems unclear" — first. Ask all three in one message so the
 user answers once instead of being interrogated three times.
 
-Everything downstream depends on the answers, and none of them can be inferred:
-the URL is not in the repository, credentials are never in the repository, and a
-login flow with a dropdown or a checkbox in it looks identical to one without
-until someone says so.
+**This is a gate, not a preamble.** Every question below has a stop condition,
+and an unanswered one ends the run right here — with the question, not with a
+half-built framework. Nothing is inferred, defaulted, or placeholdered: the URL
+is not in the repository, credentials are never in the repository, and a login
+flow with a dropdown in it looks identical to one without until someone says so.
+
+**Why stopping here is cheap and stopping later is not.** These three answers
+feed Skill 00's Phase A directly. Guessing at any of them doesn't avoid the
+stop — it moves it to Skill 00 (where the failure is reported less clearly), or
+to Skill 02 (after the framework has been read), or to Skill 09 (after every
+artifact has been generated, where the whole suite fails for a reason that has
+nothing to do with the generated code). The question costs one message. The
+alternatives cost the run.
 
 ## The three questions — ask verbatim in substance
 
 **1. What is the application URL?**
 The environment to automate against. Also accept a separate URL per environment
 if the user volunteers one, and record which one this run targets.
+
+> **✋ HARD STOP — no URL, no run.** Skill 00 cannot reach the application,
+> Skill 02 cannot explore it, and every Skill from 03 onward depends on Skill 02.
+> Never substitute a URL found in a config file, a README, or a previous run.
 
 **2. What are the credentials, and what are the exact login steps?**
 Username and password alone are not a login flow. Ask explicitly for every
@@ -276,48 +292,58 @@ page, in order — including:
   code, a shared secret, or not automatable at all
 - what proves login succeeded (the URL landed on, a visible element)
 
-Capture the answer as an ordered **Login Recipe**. It is the single input the
-user's existing authentication fixture is reconciled against.
+Capture the answer as an ordered **Login Recipe**. It is what Skill 00
+authenticates with in Phase A, and what the project's existing authentication
+fixture is reconciled against in Phase B.
+
+> **✋ HARD STOP — no credentials, no run.** Never invent, guess, or placeholder
+> a credential, and never read one out of a committed config file and assume it
+> is current. Ask.
+>
+> **✋ HARD STOP — an incomplete Login Recipe, too.** This is the one most often
+> waved through, because a username and password *look* like a complete answer.
+> If that is all the user gives, ask specifically whether anything else is
+> required to get in. A mandatory user-group dropdown discovered at Skill 02
+> means Phase B reconciled the Recipe against the wrong flow, and every
+> authenticated spec fails at Skill 09 for a reason unrelated to the code.
 
 **3. Have you placed the Test Case file in `<resource-root>/input/` in CSV
 format?**
 Name the resolved path in the question (e.g. `.claude/input/`) so there is no
 ambiguity about where it goes. `.xlsx` is also parsable, but CSV is preferred —
-it diffs cleanly and parses without a spreadsheet engine. If the user says yes,
-verify it is actually there before proceeding; if it is not, say so plainly
-rather than proceeding to a Skill 00 failure that reports the same thing less
-clearly.
+it diffs cleanly and parses without a spreadsheet engine.
+
+> **✋ HARD STOP — no Test Case file, no run.** If the user says yes, **verify it
+> is actually there** before proceeding; a confident "yes" about a file that
+> isn't in that directory is the most common version of this failure. If it is
+> missing, say so plainly and name the exact path it belongs in — do not proceed
+> and let Skill 00's Phase A report the same thing less clearly, and never fall
+> back to a spreadsheet found elsewhere in the project.
 
 ## Handling the answers
 
-- **Ask once, then proceed.** If the user has already supplied an answer in
-  their triggering request, do not re-ask it — confirm it back as part of the
-  Intake summary and ask only what is genuinely missing.
-- **A missing URL or missing credentials is a hard stop.** Skill 02 cannot
-  explore an application it cannot reach or log into, and every Skill from 03
-  onward depends on Skill 02. Do not begin the pipeline planning to "figure out
-  login later."
-- **An incomplete Login Recipe is a hard stop too, and it is the one most often
-  waved through.** If the user gives only a username and password, ask
-  specifically whether anything else is required to get in. Discovering a
-  mandatory user-group dropdown during Skill 02 means the authentication fixture
-  Skill 00 already built is wrong, and every spec that depends on it fails at
-  Skill 09 for a reason that had nothing to do with the code.
-- **Never invent, guess, or placeholder a credential**, and never read one out
-  of a committed config file and assume it is current. Ask.
-- **Handle credentials as secrets.** They go into the generated framework the
-  way the target project already handles secrets — an `.env` file, an existing
-  config module, or environment variables read at runtime. Never hardcode a
-  password into a Page Object, a spec, or `testData.ts`, and never echo one back
-  in a report, a commit, or `execution-state.md`.
+- **Ask once, then proceed.** If the user already supplied an answer in their
+  triggering request, do not re-ask it — confirm it back in the Intake summary
+  and ask only what is genuinely missing. The gate is satisfied by having the
+  answer, not by having asked the question.
+- **Ask all three together, and stop on all that are missing at once.** Stopping
+  three times for one question each is the same failure as not asking.
+- **A hard stop means the pipeline does not start.** Not "start and revisit," not
+  "proceed with a placeholder and fix it at Skill 02." No Skill runs, including
+  Skill 00, until every stop condition above is cleared.
+- **Handle credentials as secrets.** They go into the generated framework the way
+  the target project already handles secrets — an `.env` file, an existing config
+  module, or environment variables read at runtime. Never hardcode a password
+  into a Page Object, a spec, or `testData.ts`, and never echo one back in a
+  report, a commit, or `execution-state.md`.
 
 ## Record the answers
 
 Write the Intake results into `execution-state.md` (Intake section) before the
-pipeline starts. Skill 00's Phase A uses the URL and credentials directly;
-Skill 00 builds the authentication fixture from the Login Recipe; Skill 02
-follows it to authenticate. All three read it from there rather than from
-recollection.
+pipeline starts. Skill 00's Phase A authenticates with the URL, credentials, and
+Login Recipe; Phase B reconciles the Recipe against the project's existing
+authentication fixture; Skill 02 follows it to log in. All three read it from
+there rather than from recollection.
 
 ---
 # ==============================================================================
@@ -390,7 +416,8 @@ maintainable and reusable · **trace every test to a supplied Test Case** ·
 
 ```
    INTAKE GATE                   → URL · credentials · Login Recipe · TC file location
-        ↓                                                  ✋ hard stop if unanswered
+        ↓        ✋ hard stop per question — no URL / no credentials / incomplete
+        ↓           Login Recipe / no TC file in input/ each ends the run here
 00 Target Readiness & Framework Inventory                  ✋ hard stop if it fails
      Phase A  environment: TC file · runner · browser · app + Login Recipe
      Phase B  project: compiles · base framework present
@@ -402,7 +429,7 @@ maintainable and reusable · **trace every test to a supplied Test Case** ·
         ↓
 03 Locator Generation            → Locator Map
         ↓
-04 Page Object Generation        → BasePage.ts + Page Objects
+04 Page Object Generation        → Page Objects (extending the project's base class)
         ↓
 05 Assertion Generation          → verification methods (into 04's files)
         ↓
@@ -643,8 +670,11 @@ carried-forward result as if it were freshly re-verified.**
 
 - ✗ **Resource root not found** — neither `.claude/` nor `.opencode/` exists in
   the project root with an `agent/agent.md` inside it
-- ✗ **Intake unanswered** — no application URL, no credentials, or an incomplete
-  Login Recipe
+- ✗ **Intake unanswered — any of the three questions.** No application URL; no
+  credentials; an incomplete Login Recipe (username and password given, but the
+  dropdowns/checkboxes/extra screens never established); or no Test Case file in
+  `<resource-root>/input/`. Each is its own hard stop — the pipeline does not
+  start, and nothing is placeholdered to "fix later"
 - ✗ No Test Case file supplied
 - ✗ Test Case file empty, unreadable, or zero valid rows
 - ✗ Application cannot be accessed
@@ -732,9 +762,10 @@ Generation is complete **only when all of the following hold.** Do not return
 partial results unless the user explicitly asked for them.
 
 **Inputs & sequencing**
-- ✓ **Intake Gate answered** — URL, credentials, and a complete Login Recipe
-  recorded in `execution-state.md`; Test Case file confirmed in
-  `<resource-root>/input/`
+- ✓ **Intake Gate cleared — all three hard stops** — URL, credentials, and a
+  complete Login Recipe (every dropdown, checkbox, extra screen, and MFA decision)
+  recorded in `execution-state.md`; Test Case file **verified present** in
+  `<resource-root>/input/`, not merely reported as present
 - ✓ **Skill 00's readiness gate passed** — both phases (or was explicitly
   overridden by the user, and the delivery is labelled "Generated, NOT Verified")
 - ✓ Test Case file supplied, parsed, and yielding ≥1 automatable case
