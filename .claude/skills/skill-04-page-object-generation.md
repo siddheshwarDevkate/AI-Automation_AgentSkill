@@ -7,35 +7,38 @@ Generate production-ready Playwright Page Objects using the Application Analysis
 Load the Knowledge files and Template listed for Skill 04 in .claude/agent/agent.md's **Skill Dependency Matrix** — that table is the single source of truth and is deliberately not restated here.
 
 ## Inputs
-Required: Application Analysis Report (including its Page Inventory), Locator Map.
-Optional: existing framework, existing BasePage, existing utility classes.
+Required: Application Analysis Report (including its Page Inventory), Locator Map, **Reuse Inventory (from Skill 00 — the user's base class, `utils/`, `fixtures/`, `hooks/`, with exact signatures and import paths)**.
 
 ## Expected Output
-- `BasePage.ts` (generated if it doesn't already exist — see BasePage Generation below)
 - Exactly one Page Object per Page Inventory entry (from Skill 02) — private locators, public action methods, baseline pattern-driven verification methods, compound business methods, covering every pattern/component/feature that appears on that page as methods on the same class
-- Utility classes, only if genuinely needed to remove duplication (see Utility Class Generation below)
+- A new `utils/` helper or base-class method **only** where the Reuse Inventory has no equivalent and two or more pages need it (see Utility Class Generation below)
+
+Does NOT generate the base class — it is the user's and already exists.
 
 Does NOT generate: Spec files, test data, or in-test assertions. Does NOT generate the full, final set of verification methods — Skill 05 (Assertion Generation) adds whatever this Skill's baseline pattern coverage doesn't already satisfy for each test case's `expectedResult`.
 
 ## Responsibilities
 Create Page Object classes — one per Page Inventory entry, no more, no fewer — initialize locators, implement business actions, implement reusable methods, encapsulate Playwright interactions, maintain clean architecture — following .claude/skills/templates/page-object-template.md exactly.
 
-## BasePage Generation
-**`BasePage.ts` normally already exists** — Skill 00 (.claude/skills/skill-00-framework-scaffold.md) generated it during the scaffold, before any test case was parsed, and the Scaffold Manifest in `execution-state.md` records exactly what it contains. Read that manifest first: every Page Object generated this run extends the existing `BasePage`, and any behaviour already implemented there is **called, never reimplemented** (RS-01).
+## The Base Class Is the User's — Extend It, Never Write It
+**This Skill does not generate a base class.** The project's base page class is hand-written and maintained by the user; Skill 00 (.claude/skills/skill-00-framework-inventory.md) already read it and recorded every method in the **Reuse Inventory** in `execution-state.md`.
 
-If it is missing (an unusual case — the scaffold was skipped or the target project supplied its own layout), fall back to the check below.
+Before generating anything:
+- **Read the Reuse Inventory first.** It gives the base class's real name (it may be `BasePage.ts`, `BaseClass.ts`, `CommonPage.ts`, or anything else), its methods with exact signatures, and its import path.
+- **Every generated Page Object extends that class** (RS-04) and **calls** its methods. If the base class already provides `navigateTo()`, `click()`, or a wait helper, use it — writing a page-local version of behaviour that already exists is an RS-01 violation, not a stylistic choice.
+- **Never rewrite, rename, or restructure an existing base-class method to make a generated Page Object fit.** Other tests already call it. If a generated class doesn't fit, the generated class is what changes. A genuinely missing capability that two or more pages need is added as a **new** base-class method, in the user's style and recorded in the Reuse Inventory, per Skill 00's Gap Handling.
 
-Before generating any page-specific Page Object, check whether `BasePage.ts` already exists in the target framework.
-- If it exists, reuse it as-is — do not regenerate or overwrite it.
-- If it doesn't exist, generate it first, per .claude/skills/knowledge/framework-architecture.md's BasePage definition: reusable navigation, generic waits, and common helper methods only — never page-specific logic. Every Page Object generated this run extends it.
+If the Reuse Inventory records no base class at all, stop and report it — Skill 00's Phase B check 6 should already have caught it. Do not invent one and proceed.
 
 ## Utility Class Generation
-While generating Page Objects, watch for logic that would otherwise be duplicated across multiple classes (e.g. a repeated wait pattern, a repeated date-formatting routine). When found, extract it into a utility class (e.g. `WaitHelper.ts`, `DateHelper.ts`) in `utils/`, per .claude/skills/knowledge/framework-architecture.md's Utilities section, instead of duplicating it inline. Do not create a utility class speculatively — only when actual duplication is found.
+**Check the Reuse Inventory first — the helper usually already exists.** The user's `utils/` is where their reusable logic lives, and a repeated wait pattern or date-formatting routine is exactly the kind of thing already sitting there. Call it (RS-01).
 
-**Checking is mandatory, even though creating is conditional.** After generating the full set of Page Objects, compare their method bodies against each other, per .claude/skills/knowledge/framework-architecture.md's Mandatory Extraction Analysis: identical bodies across two or more classes move to `BasePage`; repeated non-page-specific helper logic moves to `utils/`. Record the outcome — what was extracted, or an explicit "no logic duplicated across Page Objects." An empty `utils/` is a valid result only as that stated conclusion, never because the comparison was skipped.
+When logic would be duplicated across multiple generated classes and the Inventory has no equivalent, add a helper to the user's `utils/` — in their file organization, naming, and typing style — and record it in the Inventory. Never create one speculatively, and never in a parallel folder.
+
+**Checking is mandatory, even though adding is conditional.** After generating the full set of Page Objects, compare their method bodies against each other, per .claude/skills/knowledge/framework-architecture.md's Mandatory Extraction Analysis: identical bodies across two or more classes belong on the base class (as a **new** method — never by rewriting an existing one); repeated non-page-specific helper logic belongs in `utils/`. Record the outcome — what was added, or an explicit "no logic duplicated across Page Objects, everything reused from the existing framework." Adding nothing is the expected result and a valid one, but only as a stated conclusion, never because the comparison was skipped.
 
 ## Workflow
-Check/Generate BasePage → Read Application Analysis → Read Page Inventory → Read Locator Map → For Each Page Inventory Entry, Generate ONE Page Object (per .claude/skills/templates/page-object-template.md structure), Folding In Every Pattern/Component Found On That Page As Methods → Generate Action Methods → Generate Baseline Verification Methods → Extract Duplicated Logic Into Utility Classes When Found → Validate Generated Class Against the Page Object Count Rule Below → Proceed to Next Page Inventory Entry
+Read the Reuse Inventory (base class, utils, fixtures, hooks) → Read Application Analysis → Read Page Inventory → Read Locator Map → For Each Page Inventory Entry, Generate ONE Page Object (per .claude/skills/templates/page-object-template.md structure), Folding In Every Pattern/Component Found On That Page As Methods → Generate Action Methods → Generate Baseline Verification Methods → Reuse Existing Helpers, Adding to `utils/`/the Base Class Only Where Nothing Equivalent Exists → Validate Generated Class Against the Page Object Count Rule Below → Proceed to Next Page Inventory Entry
 
 ## Page Object Count Rule (Critical)
 **The number of generated Page Objects must equal the number of entries in Skill 02's Page Inventory — never one per detected pattern, component, or feature.**
@@ -54,7 +57,7 @@ Before moving to Spec Generation, count the generated Page Objects and confirm t
 ## Pattern Detection
 Patterns and components detected on a page (per .claude/skills/knowledge/generation-patterns.md's Pattern Library) become METHODS on that page's single Page Object — never a Page Object of their own. Before generating, identify reusable UI/business patterns across pages (authentication, dashboard, CRUD, search, listing, detail, wizard/multi-step, settings, report, profile, modal/dialog, table management, file upload, approval workflow). Reuse method structure, naming, navigation, verification, and helper methods across pages sharing a pattern rather than generating each independently — but the pattern still lives inside its page's existing class.
 
-Common reusable business operations: login, logout, search, filter, create, edit, delete, save, cancel, upload, download, approve, reject — implement consistently across the framework. Move genuinely shared logic into BasePage, shared component classes, or utility classes rather than duplicating it, per the Page Object Count Rule's exception above.
+Common reusable business operations: login, logout, search, filter, create, edit, delete, save, cancel, upload, download, approve, reject — implement consistently across the framework. **Several of these are usually already in the user's base class or `utils/`; call those rather than writing new ones.** Genuinely shared logic with no existing equivalent goes on the base class, a shared component class, or `utils/` — never duplicated across Page Objects, per the Page Object Count Rule's exception above.
 
 ## Page Complexity Analysis
 - **Simple** (Login, Forgot Password, Profile): lightweight Page Object
@@ -83,7 +86,7 @@ Every generated Page Object must compile, follow strict TypeScript, follow namin
 Before completing each Page Object verify: correct class structure, complete constructor, all required locators initialized, public methods generated, verification methods available, no direct locator access from outside, no framework rule violations. Before completing the full set, verify the Page Object Count Rule: generated class count equals the Page Inventory count exactly.
 
 ## Success Criteria
-`BasePage.ts` present (generated or reused) · exactly one Page Object per Page Inventory entry · every pattern/component found on a page folded into that page's own class · no component/pattern generated its own Page Object · genuinely duplicated logic extracted into utility classes, not left inline · all locators implemented · action/baseline-verification/business methods generated · framework standards followed.
+Reuse Inventory read and the project's base class extended by every generated class · no method written that the Inventory already provides · exactly one Page Object per Page Inventory entry · every pattern/component found on a page folded into that page's own class · no component/pattern generated its own Page Object · genuinely duplicated logic extracted into utility classes, not left inline · all locators implemented · action/baseline-verification/business methods generated · framework standards followed.
 
 ## Failure Handling
 If generation fails, document the issue, preserve generated code, add TODOs where required, and continue with remaining Page Objects. Never fabricate missing implementation.

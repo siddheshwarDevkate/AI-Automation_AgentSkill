@@ -7,7 +7,7 @@ Actually run the generated Playwright suite across a multi-browser matrix, and r
 Load the Knowledge files listed for Skill 09 in .claude/agent/agent.md's **Skill Dependency Matrix** — that table is the single source of truth and is deliberately not restated here. This Skill uses no Template; it produces an Execution Report (data), not generated code, except for the narrowly-scoped `playwright.config.ts` browser matrix and worker cap described below.
 
 ## Inputs
-Required: Complete generated framework (Scaffold, Page Objects, Spec files, Test Data), Validation Report (from Skill 08), Test Case Model, **Scaffold Manifest (from Skill 00 — the list of shared artifacts whose failures are systemic, and the reuse inventory repairs must respect)**, live application access.
+Required: The user's base framework plus the generated Page Objects, Spec files, and Test Data, Validation Report (from Skill 08), Test Case Model, **Reuse Inventory (from Skill 00 — the list of shared artifacts whose failures are systemic, and the catalogue repairs must reuse rather than duplicate)**, live application access.
 Optional: existing `playwright.config.ts`, existing execution/CI configuration, a user-specified browser list.
 
 ## Expected Output — Execution Report
@@ -99,7 +99,7 @@ The strategy below fixes both. Its goal is not to run fewer tests overall; it is
 **Run a single test first.** Pick the test whose source test case exercises the most shared infrastructure — normally a straightforward authenticated case that logs in via the fixture, navigates through `BasePage`, and asserts something simple. One browser, one test.
 
 Its result splits the entire run in two:
-- **Canary passes** → the scaffold, the auth fixture, `BasePage`, the config, and compilation are all sound. Individual failures from here are genuinely individual. Proceed to Stage 3.
+- **Canary passes** → the base framework, the auth fixture, the base class, the config, and compilation are all sound. Individual failures from here are genuinely individual. Proceed to Stage 3.
 - **Canary fails** → something shared is broken. **Do not run the rest of the suite.** Go to Stage 2.
 
 This costs one test-duration and is the highest-value single action in this Skill. A suite of 50 tests that all fail on a broken login fixture takes one canary run to diagnose instead of a full matrix sweep.
@@ -190,7 +190,7 @@ For every failing test, classify the failure before touching anything. **Classif
 
 Only categories 1–5 and 7 are repaired by this Skill. Category 6 is never repaired — see the Strict Repair Rule below.
 
-**Category 7 is the one most often misclassified as "cannot execute."** The Preflight Gate (.claude/agent/agent.md) already proved the runner, browsers, and application work and that the project compiled *before* generation. So a compile or import failure now means this run introduced it — most commonly by generating into a folder layout the project's own `playwright.config.ts`/`tsconfig.json` doesn't point at. Fix the generated code or its paths to match the Target Project Profile; do not report it as a Critical Failure and stop.
+**Category 7 is the one most often misclassified as "cannot execute."** Skill 00's readiness gate already proved the runner, browsers, and application work and that the project compiled *before* generation. So a compile or import failure now means this run introduced it — most commonly by generating into a folder layout the project's own `playwright.config.ts`/`tsconfig.json` doesn't point at. Fix the generated code or its paths to match the Target Project Profile; do not report it as a Critical Failure and stop.
 
 ## Repair Routing
 | Root Cause | Re-invoke | Scope of Change |
@@ -201,9 +201,17 @@ Only categories 1–5 and 7 are repaired by this Skill. Category 6 is never repa
 | Test data conflict | Skill 06 — Test Data Generation (+ Skill 07 if teardown wiring is missing) | The affected dataset in `testData.ts`, and the spec's teardown if that's the gap |
 | Flakiness | Skill 04/07 — replace hard waits with proper Playwright waiting | Only the affected method/test |
 | Build/compile defect | Skill 04/06/07 — whichever generated the offending file | Only the broken import/path/type, realigned to the Target Project Profile |
-| **Scaffold defect** (BasePage, auth fixture, shared hook) | **Skill 00 — Framework Scaffold** | Only the broken scaffold method/fixture — **always systemic, always repaired before further execution** |
+| **Base framework defect** (base class, auth fixture, shared hook — **user-owned code**) | **Skill 00 — Framework Inventory** | Only the broken method/fixture. **Always systemic, always fixed before further execution, and always reported explicitly** — see Repairing User-Owned Code below |
 
-**Repairs obey the Reuse-First Rules** (RS-01–RS-05, .claude/skills/skill-00-framework-scaffold.md). A repair may not fix a failure by pasting a local copy of logic that already exists in `BasePage`, `utils/`, `fixtures/`, or `hooks/` — that is an RS-01 violation, and this is where the temptation is highest. If the shared version is wrong, fix the shared version (RS-05); if the fix is genuinely new and reusable, put it in the scaffold (RS-03). Skill 08's Duplicate Detection catches this at the Re-Validation Gate, so a duplicate-based repair costs a round rather than saving one.
+**Repairs obey the Reuse-First Rules** (RS-01–RS-05, .claude/skills/skill-00-framework-inventory.md). A repair may not fix a failure by pasting a local copy of logic that already exists in the base class, `utils/`, `fixtures/`, or `hooks/` — that is an RS-01 violation, and this is where the temptation is highest. Call the existing one; if something genuinely new is needed, add it beside its siblings in the user's structure (RS-03). Skill 08's Duplicate Detection catches this at the Re-Validation Gate, so a duplicate-based repair costs a round rather than saving one.
+
+## Repairing User-Owned Code (Critical)
+The base class, `utils/`, `fixtures/`, and `hooks/` are hand-written by the user. Generated Page Objects, specs, and test data are this pipeline's. **Repairs are not equally free across that line.**
+
+- **Generated code** — repair it freely under the routing above. This run produced it; this run fixes it.
+- **User-owned code** — first ask whether the defect is really there. The overwhelmingly likely explanation for a failure in working, pre-existing code is that the generated code is calling it wrongly: wrong argument, wrong order, a precondition the generated Page Object skipped. **Fix the call site, not the callee.**
+- If the defect genuinely is in the base framework, fix the minimum and **report it prominently in the Execution Report** — what was changed, why, and what else calls it. A silent edit to a method other tests depend on is how a repair that fixed one test breaks five that were never in this run's scope.
+- **Never rewrite, rename, or restructure user-owned code to make a generated test pass.** That is the same failure as weakening an assertion, in a different place. Adding a new sibling method is fine; changing an existing one is a reported change.
 
 After a repair, re-run only the affected test(s) on every browser before moving on — per Execution Strategy, Stage 4. **Never re-run the whole suite mid-repair**; the only re-run that widens beyond the failing set is a shared-code repair, which pulls in that artifact's dependents. The full suite runs exactly once, at Stage 5.
 
@@ -258,9 +266,9 @@ Canary run first and systemic defects repaired before further execution · remai
 
 **"Cannot be executed" means the environment is gone, not that the code is broken.** This distinction is the difference between stopping correctly and quitting on work you were supposed to do.
 
-**Critical Failure — stop and report.** Only when the environment itself is unavailable: the runner has disappeared, no browser can launch, or the application is unreachable. The Preflight Gate verified all three before generation began, so this means something changed underneath the run. Do not hand an unexecuted framework to Skill 10 as if it were verified.
+**Critical Failure — stop and report.** Only when the environment itself is unavailable: the runner has disappeared, no browser can launch, or the application is unreachable. Skill 00's Phase A verified all three before generation began, so this means something changed underneath the run. Do not hand an unexecuted framework to Skill 10 as if it were verified.
 
-**Not a Critical Failure — repair it.** Anything wrong with the code this run produced: it doesn't compile, an import doesn't resolve, a config points at a path the generated files don't occupy, a type error. That is Root Cause 7, and it is this Skill's job. Preflight proved the project compiled before generation; if it doesn't compile now, this run broke it and this run fixes it. **Stopping here and reporting "the suite cannot be executed" is the single most common way this Skill gets skipped — it is not a valid exit.**
+**Not a Critical Failure — repair it.** Anything wrong with the code this run produced: it doesn't compile, an import doesn't resolve, a config points at a path the generated files don't occupy, a type error. That is Root Cause 7, and it is this Skill's job. Skill 00 proved the project compiled before generation; if it doesn't compile now, this run broke it and this run fixes it. **Stopping here and reporting "the suite cannot be executed" is the single most common way this Skill gets skipped — it is not a valid exit.**
 
 If only specific test cases are blocked after the retry budget, that is a non-critical failure — document them and continue.
 

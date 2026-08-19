@@ -7,7 +7,7 @@ Convert the Test Case Model into executable, business-focused Playwright specs w
 Load the Knowledge files and Template listed for Skill 07 in .claude/agent/agent.md's **Skill Dependency Matrix** — that table is the single source of truth and is deliberately not restated here.
 
 ## Inputs
-Required: Test Case Model (from Skill 01), Application Analysis Report, Generated Page Objects (from Skill 04, with verification methods already added by Skill 05), `test-data/testData.ts` (from Skill 06).
+Required: Test Case Model (from Skill 01), Application Analysis Report, **Reuse Inventory (from Skill 00 - the project's authentication fixture, hooks, and helpers)**, Generated Page Objects (from Skill 04, with verification methods already added by Skill 05), `test-data/testData.ts` (from Skill 06).
 Optional: existing Spec files.
 
 ## Expected Output
@@ -24,7 +24,7 @@ Every parsed test case (per Skill 01's Test Case Model) produces exactly one spe
 - Generate exactly one test per test case, tagged with its `id`
 - Reuse Page Object action/verification methods (Skills 04–05) and data constants (Skill 06) — never define new ones here
 - Flag any test case that cannot be automated (missing Page Object method, verification method, or data constant) instead of fabricating a workaround
-- Never define a reusable/common function inline inside a spec file — extract data generators, custom waits, or setup/teardown logic shared by two or more specs into `utils/`, `fixtures/`, or `hooks/` per .claude/skills/knowledge/framework-architecture.md's Reusable Logic Placement section (see also .claude/skills/knowledge/framework-rules.md's RL-01–RL-04)
+- **Check the Reuse Inventory before writing any helper — the user's `utils/`/`fixtures/`/`hooks/` usually already has it (RS-01).** Never define a reusable/common function inline inside a spec file; call the existing one, or add a new sibling to `utils/`, `fixtures/`, or `hooks/` in the user's style when nothing equivalent exists, per .claude/skills/knowledge/framework-architecture.md's Reusable Logic Placement section (see also .claude/skills/knowledge/framework-rules.md's RL-01–RL-04)
 - Wire teardown for every test case Skill 06's Test Data Lifecycle Plan marked state-creating or state-mutating, per .claude/skills/knowledge/test-data-lifecycle.md's Teardown section
 - Generate the actual Spec files per .claude/skills/templates/spec-template.md
 
@@ -32,13 +32,13 @@ Every parsed test case (per Skill 01's Test Case Model) produces exactly one spe
 Generate the specs first, then — before declaring this Skill complete — run .claude/skills/knowledge/framework-architecture.md's **Mandatory Extraction Analysis** across everything just written, and refactor what it finds. This is a required step with a recorded outcome, not an opportunistic one.
 
 Concretely, compare every spec's `beforeEach`/`afterEach` and setup code against every other spec's:
-- Same routine in two or more specs → move it to `hooks/` and import it.
-- Shared precondition (logged-in user, seeded record, selected context) → make it a `fixtures/` fixture.
-- Repeated helper logic with no Playwright lifecycle dependency → `utils/`.
+- Same routine in two or more specs → import the existing `hooks/` routine if the Inventory has one; otherwise add a new one to `hooks/` and import it.
+- Shared precondition (logged-in user, seeded record, selected context) → consume the existing fixture; the authenticated session in particular is nearly always already provided.
+- Repeated helper logic with no Playwright lifecycle dependency → call the existing `utils/` helper, or add a new one there.
 
-**Inline login in every spec is the failure this catches — and Skill 00 already prevented it.** The authentication fixture was built during the scaffold, from the Intake Gate's Login Recipe, and its name is in the Scaffold Manifest. Every spec needing a logged-in session **consumes that fixture**. Writing a login into a spec's `beforeEach` is a violation of RL-05 whether or not another spec duplicates it, and it is never necessary: the fixture existed before this Skill ran.
+**Inline login in every spec is the failure this catches — and the user's framework already solved it.** The authentication fixture is hand-written, already working, and recorded by name in the Reuse Inventory. Every spec needing a logged-in session **consumes that fixture** (RS-05). Writing a login into a spec's `beforeEach` is a violation of RL-05 whether or not another spec duplicates it, and it is never necessary — the fixture existed before this pipeline ran, and a second login path will drift from the one the user maintains.
 
-State the outcome in the Spec Generation notes: what was extracted and where, or an explicit "no logic is shared across two or more specs" if genuinely nothing was. Leaving `utils/`, `hooks/`, and `fixtures/` empty is acceptable only as that stated conclusion — never as the result of not checking.
+State the outcome in the Spec Generation notes: what was reused from the existing framework, what (if anything) was added to it and where, or an explicit "everything shared was already provided by the base framework." Adding nothing is the expected result — but only as that stated conclusion, never as the result of not checking.
 
 ## Test Data Lifecycle Wiring
 Skill 06 produced a Test Data Lifecycle Plan classifying each test case as read-only, state-creating, or state-mutating. Honour it here:
@@ -75,7 +75,7 @@ Test cases are the source of truth, so duplicates should already be resolved in 
 Before completing, verify every parsed test case maps to exactly one generated test or is explicitly recorded as "Not Automated." Coverage is measured against the Test Case Model, not against discovered application functionality.
 
 ## Success Criteria
-Every test case mapped to a Spec file · one test generated per test case · every generated test tagged with its source `id` · every test calls only pre-existing Page Object methods and pre-existing data constants (no inline assertions, no hardcoded literals) · no reusable/common function defined inline inside a spec file (extracted to `utils/`/`fixtures/`/`hooks/` instead) · every state-creating/state-mutating test case uses its uniqueness factory and has teardown wired · Extraction Pass run and its outcome recorded (shared setup moved to `hooks/`/`fixtures/`, or an explicit "nothing shared") · unautomatable test cases documented, not fabricated · Spec files generated.
+Every test case mapped to a Spec file · one test generated per test case · every generated test tagged with its source `id` · every test calls only pre-existing Page Object methods and pre-existing data constants (no inline assertions, no hardcoded literals) · every spec consumes the project's authentication fixture rather than logging in inline (RS-05) · no reusable/common function defined inline inside a spec file, and none rewritten that the Reuse Inventory already provides (RS-01) · every state-creating/state-mutating test case uses its uniqueness factory and has teardown wired · Extraction Pass run and its outcome recorded (shared setup moved to `hooks/`/`fixtures/`, or an explicit "nothing shared") · unautomatable test cases documented, not fabricated · Spec files generated.
 
 ## Failure Handling
 If a test case can't be automated, document it as "Not Automated" with the reason and continue with the rest. Never invent a scenario, step, Page Object behaviour, verification method, or data value to force a test case through.

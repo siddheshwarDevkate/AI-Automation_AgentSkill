@@ -5,28 +5,30 @@
 Everything below this block is the full specification. **This block is the
 compressed version — if you retain nothing else, retain this.**
 
-## Before anything: Intake, then the Preflight Gate
+## Before anything: Intake, then Skill 00
 
 **First, ask the three Intake questions** — application URL, credentials + the
 exact login steps, and confirmation that the Test Case file is sitting in
 `<resource-root>/input/` as CSV. Ask them up front, in one message, before any
 tool call. Everything downstream needs all three, and none of them is guessable.
 
-**Then verify the target can actually run tests BEFORE generating a single
-file** — runner installed, ≥1 browser, application reachable, project compiles.
-Record the layout the project actually uses and generate into *that*. If a check
-fails, stop now, at zero cost. Discovering this at Skill 09 wastes the entire run
-and is why Skill 09 gets skipped.
+**Then Skill 00 verifies the target can actually run tests BEFORE generating a
+single file** — runner installed, ≥1 browser, application reachable, project
+compiles, base framework present — and reads that framework into the Reuse
+Inventory. It records the layout the project actually uses, and everything
+generates into *that*. If a check fails, the run stops there, at near-zero cost.
+Discovering this at Skill 09 wastes the entire run and is why Skill 09 gets
+skipped.
 
 ## The 11 Skills, in order (never reorder, never skip)
 
 | # | Skill | What it produces |
 |---|---|---|
-| 00 | Framework Scaffold | Skeleton: `BasePage.ts`, `utils/`, `hooks/`, `fixtures/` browser+auth setup, empty `pages/`/`tests/`/`test-data/` |
+| 00 | Target Readiness & Framework Inventory | Readiness gate (environment + project) **and** the **Reuse Inventory** — a catalogue of the user's hand-written base framework, read not written |
 | 01 | Test Case Analysis | Test Case Model (parsed from the TC file) |
 | 02 | Application Analysis | App Analysis Report + **Page Inventory** |
 | 03 | Locator Generation | Locator Map, grouped by real page |
-| 04 | Page Object Generation | One class per Page Inventory entry, extending Skill 00's `BasePage.ts` |
+| 04 | Page Object Generation | One class per Page Inventory entry, extending the project's own base class |
 | 05 | Assertion Generation | Verification methods **appended into Skill 04's files** |
 | 06 | Test Data Generation | `test-data/testData.ts` |
 | 07 | Spec Generation | Spec files — one test per TC, wiring 04–06 together |
@@ -41,8 +43,8 @@ it will invent them — which is forbidden.
 ## The 9 rules that must never be violated
 
 1. **No Test Case file, no generation.** Skill 01 is a hard gate for everything
-   derived from test cases. Skill 00's scaffold precedes it and derives nothing
-   from them — Preflight check 1 already proved the file exists.
+   derived from test cases. Skill 00 precedes it but only *reads* the existing
+   framework, deriving nothing from the test cases.
 2. **One Page Object per REAL page** (Page Inventory entry) — never one per UI
    pattern/component. A table, dropdown, or search box is a **method on its
    page's class**, never its own class.
@@ -60,10 +62,14 @@ it will invent them — which is forbidden.
    data, swallowed exception). A real application bug is reported, never hidden.
 7. **Data that creates state needs unique values and teardown**, decided at
    generation time — not patched after a collision at execution time.
-8. **Never write a function that already exists.** Skill 00 builds the scaffold
-   —`BasePage`, `utils/`, `hooks/`, `fixtures/`. Every later Skill searches it
-   first and **calls** what is there. Extend or add only when nothing existing
-   fits, and put the addition in the scaffold so the next Skill finds it too.
+8. **The base framework is the user's, and it is an input.** `BasePage`, `utils/`,
+   `fixtures/`, and `hooks/` are hand-written and already working. Skill 00
+   **reads** them into a Reuse Inventory; every later Skill searches that
+   inventory and **calls** what is there. If the application needs an eleventh
+   utility method beside the existing ten, add it there in their style and use
+   it — that is routine. What is forbidden is writing a second version of a
+   function that already exists, or rewriting, renaming, or restructuring the
+   user's code, which other tests already depend on.
 9. **Fix the shared cause before running the rest of the suite.** If a failure
    sits in `BasePage`, a fixture, the login flow, or a compile error, every test
    will fail for that one reason. Skill 09 repairs it first, then executes —
@@ -223,8 +229,15 @@ Never generate incorrect automation for the sake of completeness.
   before defaulting to Chromium/Firefox/WebKit — see
   .claude/skills/skill-09-test-execution-self-healing.md's Browser Matrix.
 
-**Existing Framework (optional)**
-- Source code and project structure
+**Base Framework — MANDATORY, supplied by the user**
+- The hand-written base class, `utils/` helpers, `fixtures/`, and `hooks/`
+- **This is an input, not something this pipeline produces.** The user writes and
+  maintains the reusable layer; the pipeline generates Page Objects, test data,
+  and specs on top of it, calling into what is already there.
+- Skill 00 reads it into the **Reuse Inventory**; nothing in it is refactored,
+  renamed, or overwritten.
+
+**Prior Run Artifacts (optional)**
 - A prior Test Case Model, `execution-state.md`, or `traceability-report.md` —
   **required to enable Incremental Generation Mode.** An existing framework
   *without* one of these still triggers a full run.
@@ -264,7 +277,7 @@ page, in order — including:
 - what proves login succeeded (the URL landed on, a visible element)
 
 Capture the answer as an ordered **Login Recipe**. It is the single input the
-scaffolded authentication fixture is built from.
+user's existing authentication fixture is reconciled against.
 
 **3. Have you placed the Test Case file in `<resource-root>/input/` in CSV
 format?**
@@ -272,7 +285,7 @@ Name the resolved path in the question (e.g. `.claude/input/`) so there is no
 ambiguity about where it goes. `.xlsx` is also parsable, but CSV is preferred —
 it diffs cleanly and parses without a spreadsheet engine. If the user says yes,
 verify it is actually there before proceeding; if it is not, say so plainly
-rather than proceeding to a Preflight failure that reports the same thing less
+rather than proceeding to a Skill 00 failure that reports the same thing less
 clearly.
 
 ## Handling the answers
@@ -301,100 +314,69 @@ clearly.
 ## Record the answers
 
 Write the Intake results into `execution-state.md` (Intake section) before the
-Preflight Gate runs. Preflight check 4 uses the URL and credentials directly;
+pipeline starts. Skill 00's Phase A uses the URL and credentials directly;
 Skill 00 builds the authentication fixture from the Login Recipe; Skill 02
 follows it to authenticate. All three read it from there rather than from
 recollection.
 
 ---
-
 # ==============================================================================
-# PREFLIGHT GATE — RUNS AFTER INTAKE, BEFORE SKILL 00
+# TARGET READINESS — DELEGATED TO SKILL 00
 # ==============================================================================
 
-**Purpose: fail in thirty seconds instead of after generating an entire
-framework.** Skill 09 is the only Skill whose preconditions no earlier Skill
-produces — it needs an installed runner, installed browsers, a reachable
-application, and a project that compiles. Nothing in Skills 00–08 establishes
-any of those, and Output Restrictions forbid generating `package.json`,
-`tsconfig.json`, or `playwright.config.ts`. Without this gate, a target that
-cannot run tests is only discovered at Skill 09, after all the work is done —
-at which point stopping looks like the correct action and the whole run is
-wasted.
+**The environment and the target project are verified by Skill 00, before any
+generation happens.** That Skill runs in two phases: a cheap environment gate
+(Test Case file present, runner installed, at least one browser launchable,
+application reachable and the Login Recipe actually authenticating), and then a
+project read that produces the **Target Project Profile** and the **Reuse
+Inventory**. Either phase can hard-stop the run. See
+.claude/skills/skill-00-framework-inventory.md for the full check list.
 
-Validating prerequisites is already the Agent's job (see Role & Mission). This
-gate is that responsibility made explicit and mandatory.
+**Why it lives there and not here.** This Agent delegates implementation
+(AP-001), and every one of those checks is implementation: running commands,
+launching browsers, reading the project's config and framework code. More
+importantly, the last two checks — "does the project compile" and "is there a
+base framework" — require reading the target project, which is exactly what
+Skill 00 does anyway. Splitting that read across a gate in this file and a Skill
+meant doing it twice and letting the two drift apart.
 
-## Checks — all five run before Skill 00
+**What this Agent still owns:** the Intake Gate above — asking the user for the
+URL, credentials, Login Recipe, and Test Case file location. That is a
+conversation with the user, not an inspection of the project, and it belongs to
+the orchestrator. Skill 00 consumes its output.
 
-1. **Test Case file** — present in `<resource-root>/input/`, parsable, ≥1 valid
-   row. (Skill 01 re-validates in depth; this is the cheap existence check.)
-   **This check is what lets Skill 00 scaffold before Skill 01 runs** — the
-   "no Test Case file, no generation" rule is satisfied here, by proof the file
-   exists, not by Skill 01 having finished parsing it.
-2. **Test runner** — a Playwright test runner is installed and executable in the
-   target project (e.g. `npx playwright --version` succeeds).
-3. **Browsers** — at least **one** browser can actually be launched. Two or more
-   is preferred, not required: restricted corporate environments frequently
-   permit only one (e.g. a manually installed MS Edge referenced by
-   `executablePath`). One browser passes this check; **zero** fails it. If only
-   one is available, record the reduced matrix here so Skill 09 doesn't
-   rediscover it and so the Execution Report reports it honestly.
-   **Never attempt to install a browser** — no `npx playwright install`, no
-   download. Browser provisioning is the user's, and may be blocked by policy.
-4. **Application** — the URL from Intake is reachable, and the Intake
-   credentials authenticate successfully **by following the Login Recipe
-   exactly**, including every dropdown, checkbox, and intermediate screen the
-   user described. This is the cheapest possible place to discover the Recipe is
-   incomplete: fix it here, with the user, before Skill 00 builds an
-   authentication fixture around it.
-5. **Project compiles** — the target project builds/type-checks in its current
-   state, *before* anything is generated into it.
+**The ordering is unchanged and still mandatory:**
 
-## Target Project Profile — the output of this gate
+```
+Intake Gate (this file)  →  Skill 00 (readiness + inventory)  →  Skill 01 → ...
+```
 
-Record, and carry into `execution-state.md`:
-- Test directory and source layout the project actually uses (e.g. `src/`-based
-  vs. root-based), read from `playwright.config.ts` (`testDir`) and
-  `tsconfig.json` (`rootDir`/`paths`).
-- **Existing directories and their exact spelling** — if the project already has
-  `testData/`, `hooks/`, `fixtures/`, those are the destinations, spelled that
-  way. Empty ones count: a pre-created folder is the user stating where output
-  belongs. Never create a same-purpose sibling under the default name.
-- Any path alias or config import the existing setup expects.
-- Installed browsers, and any already-configured `projects`/`workers` —
-  including `executablePath`/`channel` values, which are read and preserved
-  exactly, never rewritten (see skill-09's Never Clobber rule).
-- Runner version and how the suite is invoked.
+**On failure, the run stops at Skill 00, at near-zero cost** — before a single
+Page Object exists. If the user explicitly asks to generate anyway, knowing the
+suite cannot be executed, that is permitted, but the final delivery must be
+labelled **"Generated, NOT Verified"** and Skill 10 may never mark it Production
+Ready.
 
-**Skills 04, 06, and 07 generate into this profile's layout**, per
-.claude/skills/knowledge/output-structure.md's Target Layout Alignment section — not
-into a default structure that the target's own config doesn't point at.
+The Target Project Profile Skill 00 produces — layout, existing directory
+spellings, path aliases, installed browsers, runner version — is recorded in
+`execution-state.md`, and **Skills 04, 06, and 07 generate into that profile's
+layout**, per .claude/skills/knowledge/output-structure.md's Target Layout
+Alignment section, not into a default structure the target's own config doesn't
+point at.
 
-## On failure — stop here, not at Skill 09
-
-If any check fails, stop **before Skill 00** and report exactly what is missing
-and the command that fixes it. Do not generate a framework that cannot be run.
-
-**A missing runner, missing browsers, or a non-compiling target project is a
-setup problem the user resolves — but it must surface here, at zero cost, not
-after eleven Skills of work.** If the user explicitly asks to generate anyway,
-knowing the suite cannot be executed, that is permitted — but the final delivery
-must be labelled **"Generated, NOT Verified"**, and Skill 10 may never mark it
-Production Ready.
-
----
-
-# ==============================================================================
 # EXPECTED OUTPUT
 # ==============================================================================
 
-`BasePage.ts` · the browser/authentication fixture in `fixtures/` · `hooks/` ·
-`utils/` · Page Objects (one per Page Inventory entry) · verification methods ·
-`test-data/testData.ts` · Spec files (one test per Test Case, tagged with its ID)
-· utility classes (only where they remove duplication) ·
-`traceability-report.md` · `execution-report.md` · `execution-state.md` ·
-`README.md`
+Page Objects (one per Page Inventory entry, extending the project's own base
+class) · verification methods · `test-data/testData.ts` · Spec files (one test
+per Test Case, tagged with its ID, consuming the project's authentication
+mechanism) · `traceability-report.md` · `execution-report.md` ·
+`execution-state.md` · `README.md`
+
+**Not produced:** the base class, `utils/` helpers, `fixtures/`, `hooks/`. Those
+are the user's — read and called, never rewritten. They may gain a *new* helper,
+hook, fixture, or base-class method when the application needs one, added in the
+user's own style and recorded in the Reuse Inventory.
 
 The returned framework must: compile · follow project standards · be
 maintainable and reusable · **trace every test to a supplied Test Case** ·
@@ -409,9 +391,10 @@ maintainable and reusable · **trace every test to a supplied Test Case** ·
 ```
    INTAKE GATE                   → URL · credentials · Login Recipe · TC file location
         ↓                                                  ✋ hard stop if unanswered
-   PREFLIGHT GATE                → Target Project Profile   ✋ hard stop if it fails
-        ↓
-00 Framework Scaffold            → BasePage, utils/, hooks/, fixtures/, empty pages/tests
+00 Target Readiness & Framework Inventory                  ✋ hard stop if it fails
+     Phase A  environment: TC file · runner · browser · app + Login Recipe
+     Phase B  project: compiles · base framework present
+              → Target Project Profile + Reuse Inventory (READS the user's framework)
         ↓
 01 Test Case Analysis            → Test Case Model
         ↓
@@ -460,7 +443,7 @@ Templates in `.claude/skills/templates/<name>.md`.
 
 | # | Skill | Knowledge to load | Template |
 |---|---|---|---|
-| 00 | Framework Scaffold | framework-architecture · framework-rules · playwright-best-practices · typescript-coding-standards · naming-conventions · output-structure | page-object-template (BasePage shape only) |
+| 00 | Target Readiness & Framework Inventory | framework-architecture · framework-rules · typescript-coding-standards · naming-conventions · output-structure | — (reads code, produces a profile + inventory) |
 | 01 | Test Case Analysis | test-case-parsing-rules · framework-rules · framework-architecture · output-structure | — |
 | 02 | Application Analysis | framework-architecture · framework-rules · generation-patterns · output-structure | — |
 | 03 | Locator Generation | locator-strategy · framework-rules · playwright-best-practices · naming-conventions · generation-patterns | — |
@@ -487,20 +470,24 @@ file its row doesn't list should report that gap rather than silently loading it
 - **Always complete the current Skill before invoking the next.** Never run
   dependent Skills simultaneously.
 - **The Intake Gate runs first**, before any tool call. No Skill runs, and no
-  Preflight check runs, until its three questions are answered.
-- **The Preflight Gate runs before Skill 00** and is itself a hard gate — no
-  Skill runs if it fails, unless the user explicitly accepts a
-  "Generated, NOT Verified" delivery.
+  Skill runs, until its three questions are answered.
+- **Skill 00 is a hard gate.** Its Phase A (environment) and Phase B (project
+  compiles, base framework present) must both pass before Skill 01 runs, unless
+  the user explicitly accepts a "Generated, NOT Verified" delivery.
 - **Skill 00 runs before Skill 01**, and is the only Skill permitted to precede
   it. It reads no test cases and generates nothing derived from them, so it does
-  not breach Skill 01's gate — Preflight check 1 already proved the Test Case
+  not breach Skill 01's gate — Skill 00's Phase A already proved the Test Case
   file exists. Everything from Skill 02 onward still waits on Skill 01.
 - **Skill 01 is a hard prerequisite gate** for Skills 02–10. No test-case-derived
   artifact is generated before it succeeds.
 - **Skills 03–09 obey Skill 00's Reuse-First Rules (RS-01–RS-05).** Search the
-  Scaffold Manifest before writing any method, helper, fixture, or hook; call
-  what exists, extend what nearly fits, and place genuinely new shared logic back
-  into the scaffold so the next Skill finds it.
+  Reuse Inventory before writing any method, helper, fixture, or hook; call what
+  exists rather than writing a second version; extend Page Objects from the
+  project's own base class; consume the project's own authentication mechanism.
+  Something genuinely missing is added beside its siblings — a helper in `utils/`,
+  a hook in `hooks/`, a fixture in `fixtures/`, a method on the base class — in
+  the user's style, and recorded in the inventory. Adding is routine; rewriting
+  what exists is not.
 - **Exception — bounded repair loops.** Skill 09 may re-invoke Skills 00, 03,
   04, 05, 06, or 07 to repair a specific failing artifact, per its Repair Routing
   table, and must re-invoke Skill 08 afterwards if any repair modified code (its
@@ -540,24 +527,30 @@ Login Recipe (ordered):
   MFA: <not required | bypass account | test-mode code | not automatable>
 Test Case file: <resource-root>/input/<filename> — format: CSV | XLSX — confirmed present: yes/no
 
-## Target Project Profile (from the Preflight Gate)
+## Target Project Profile (from Skill 00, Phase B)
 Runner: <version> · Invoked by: <command>
 Test dir: <path from playwright.config testDir> · Source layout: <root | src/ | other>
 Path aliases/config imports the project expects: <list, or none>
 Browsers installed: <list> · Pre-configured projects/workers: <or none>
-Preflight: PASS | FAILED (<which check>) | OVERRIDDEN by user → delivery is
-"Generated, NOT Verified"
+Skill 00 readiness: PASS | FAILED (<which check>) | OVERRIDDEN by user → delivery
+is "Generated, NOT Verified"
 
-## Scaffold Manifest (from Skill 00)
-Directories used: <actual names, e.g. pages/ tests/ utils/ fixtures/ hooks/ testData/>
-Files created: <list> · Files reused (already existed): <list>
-Auth fixture: <name> — implements Login Recipe steps 1..N
-Scaffold compile check: CLEAN | ERRORS (<detail>)
+## Reuse Inventory (from Skill 00 — READ from the user's base framework)
+Base class: <file path> — <ClassName> · extended by every generated Page Object
+Base class methods: <name(params): returnType — what it does, incl. non-obvious behaviour>
+utils/: <file → exported helpers, signatures, purpose>
+fixtures/: <fixture name as consumed in a spec → what it provides>
+hooks/: <exported routine → what it does>
+Existing Page Objects: <class → public methods> · Existing test data: <constants/factories>
+Import convention: <relative paths | alias, e.g. @pages/*>
+Auth mechanism: <fixture/hook name> — matches Login Recipe: YES | DISCREPANCY (<detail>)
+Gaps reported: <what was missing, why the app requires it> · Approved & added: <list, or none>
+Type-check after additions: N/A (nothing added) | CLEAN | ERRORS (<detail>)
 
 ## Pipeline Progress
 - [x] Intake Gate — answered / incomplete
-- [x] Preflight Gate — PASS / FAIL
-- [x] 00 Framework Scaffold — N files created, M reused, compile CLEAN
+- [x] 00 Target Readiness & Framework Inventory — Phase A PASS / Phase B PASS,
+      N reusable assets catalogued, M additions
 - [x] 01 Test Case Analysis — N parsed, M skipped
 - [x] 02 Application Analysis — Page Inventory: N pages
 - [ ] 03 Locator Generation — pending / in progress / done
@@ -585,7 +578,7 @@ Re-Validation Gate: not needed (no code modified) | ran — N findings, N fixed
 ```
 
 **Update points:** Intake after the Intake Gate · Target Project Profile after
-Preflight · Scaffold Manifest after Skill 00 · Page Inventory after Skill 02 ·
+Skill 00 · Reuse Inventory after Skill 00 · Page Inventory after Skill 02 ·
 Page Object Count Check after Skill 04 · Test Case Coverage after Skill 07 ·
 Execution Results after Skill 09.
 Before Skill 10, re-read the whole file — **an incomplete section is itself
@@ -659,16 +652,17 @@ carried-forward result as if it were freshly re-verified.**
 - ✗ Authentication fails and blocks exploration
 - ✗ Application analysis cannot be completed
 - ✗ Required project inputs unavailable
-- ✗ **Preflight Gate failure** — no runner, fewer than one browser, application
-  unreachable, or the target project does not compile *before* generation. Stop
-  here, at zero cost, rather than discovering it at Skill 09.
+- ✗ **Skill 00 readiness failure** — no runner, zero launchable browsers,
+  application unreachable, the Login Recipe failing to authenticate, the target
+  project not compiling *before* generation, or **no base framework to build on**.
+  Stop there, at near-zero cost, rather than discovering it at Skill 09.
 
 **Note the boundary:** these are *environment* failures. A problem in the code
 this run generated — a broken import, a type error, a failing compile caused by
 the generated files themselves — is **not** a critical failure and never a
 reason to stop at Skill 09. It is a framework defect Skill 09 diagnoses and
 repairs under its normal routing (see its Root-Cause Diagnosis category 7).
-Preflight already proved the environment works; anything that broke after that,
+Skill 00 already proved the environment works; anything that broke after that,
 this run broke, and this run fixes.
 
 ## Non-critical — document and continue
@@ -720,7 +714,7 @@ open `execution-report.md` and verify by reading it:
 **If `execution-report.md` does not exist, is empty, or is missing IDs, the
 framework is not deliverable — return to Skill 09 and execute.** Generating the
 files is not the deliverable; a verified suite is. The only exception is a
-Preflight override the user explicitly requested, in which case the delivery is
+Skill 00 readiness override the user explicitly requested, in which case the delivery is
 labelled **"Generated, NOT Verified"** and says plainly that no test was ever
 run.
 
@@ -741,8 +735,8 @@ partial results unless the user explicitly asked for them.
 - ✓ **Intake Gate answered** — URL, credentials, and a complete Login Recipe
   recorded in `execution-state.md`; Test Case file confirmed in
   `<resource-root>/input/`
-- ✓ **Preflight Gate passed** (or was explicitly overridden by the user, and the
-  delivery is labelled "Generated, NOT Verified")
+- ✓ **Skill 00's readiness gate passed** — both phases (or was explicitly
+  overridden by the user, and the delivery is labelled "Generated, NOT Verified")
 - ✓ Test Case file supplied, parsed, and yielding ≥1 automatable case
 - ✓ Skills executed in order, starting with Skill 00
 - ✓ Generated files landed in the Target Project Profile's layout, not a default
@@ -750,15 +744,15 @@ partial results unless the user explicitly asked for them.
 - ✓ Context preserved between Skills; Test Case IDs still attached
 
 **Artifacts**
-- ✓ **Scaffold generated by Skill 00 and type-checking clean** — `BasePage.ts`,
-  the authentication fixture built from the Login Recipe, `utils/`, `hooks/`,
-  and the empty `pages/`/`tests/`/`test-data/` destinations
+- ✓ **Reuse Inventory recorded by Skill 00** — every reusable asset in the user's
+  base framework catalogued with its exact signature, behaviour, and import path
+- ✓ **No existing framework code was rewritten, renamed, or restructured** —
+  additions were new siblings in the user's own style, recorded in the inventory
 - ✓ **No duplicated function anywhere** (RS-01/RS-02) — later Skills called the
-  scaffold's helpers rather than rewriting them, and genuinely new shared logic
-  was added back into the scaffold (RS-03)
-- ✓ **No spec performs its own login** — every logged-in test consumes the
-  authentication fixture
-- ✓ `BasePage.ts` present (generated or reused)
+  existing helpers rather than writing their own versions
+- ✓ **Every Page Object extends the project's own base class** (RS-04)
+- ✓ **No spec performs its own login** (RS-05) — every logged-in test consumes
+  the project's authentication mechanism
 - ✓ **Page Object count matches the Page Inventory exactly** — no class named
   after a UI pattern/component
 - ✓ Verification methods present on the correct Page Objects
@@ -804,7 +798,7 @@ partial results unless the user explicitly asked for them.
 **Skills** (execution order — each file owns its own full definition)
 
 ```
-.claude/skills/skill-00-framework-scaffold.md
+.claude/skills/skill-00-framework-inventory.md
 .claude/skills/skill-01-test-case-analysis.md
 .claude/skills/skill-02-application-analysis.md
 .claude/skills/skill-03-locator-generation.md

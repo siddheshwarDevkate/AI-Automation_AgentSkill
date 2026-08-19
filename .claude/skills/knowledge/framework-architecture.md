@@ -42,16 +42,18 @@ project-root/
 ```
 Generate additional folders only if explicitly requested.
 
-## The Scaffold Comes First (Critical)
-This structure is not assembled file-by-file as generation proceeds — **Skill 00 (Framework Scaffold) creates it up front**, before any test case is parsed, per .claude/skills/skill-00-framework-scaffold.md. At that point:
-- `pages/BasePage.ts` exists and is complete.
-- `fixtures/` contains the browser + authentication fixture, built from the Intake Gate's Login Recipe.
-- `hooks/` and `utils/` exist as the declared homes for shared logic.
-- `pages/`, `tests/`, and `test-data/` exist **empty**, awaiting Skills 04, 07, and 06 respectively.
+## The Base Framework Is Supplied, Not Generated (Critical)
+**The reusable layer of this structure is hand-written by the user and is an input to the pipeline.** The base class, the `utils/` helpers, the `fixtures/`, and the `hooks/` already exist and already work before generation starts. This pipeline generates only what sits on top of them: Page Objects, test data, and specs.
 
-**`fixtures/` and `hooks/` being non-empty at scaffold time is intended, not a violation of the "never scaffold empty" rule.** That rule (RL-03) exists to stop speculative empty folders appearing with nothing to put in them. The scaffold does the opposite: it puts the near-universal shared logic — authentication above all — into those folders *before* any spec exists, so it is never duplicated in the first place. See Mandatory Extraction Analysis below for why authentication in particular cannot be left to a later cleanup pass.
+**Skill 00 (Framework Inventory) reads that layer**, before any test case is parsed, per .claude/skills/skill-00-framework-inventory.md, and produces the **Reuse Inventory** — every reusable asset with its exact signature, behaviour, and import path.
 
-Skills 03–09 then compose against that scaffold under the **Reuse-First Rules (RS-01–RS-05)** in .claude/skills/skill-00-framework-scaffold.md: search what exists, call it, extend it if it nearly fits, and place genuinely new shared logic back into the scaffold rather than beside it. Duplicating a function that already exists in `BasePage`, `utils/`, `fixtures/`, or `hooks/` is a violation of RS-01 and of the Reusability principle above, and Skill 08 flags it as duplicate detection.
+Skills 03–09 then compose against that inventory under the **Reuse-First Rules (RS-01–RS-05)**: search it, call what is there, extend Page Objects from the project's own base class, and consume the project's own authentication mechanism. Writing a function that already exists in `BasePage`, `utils/`, `fixtures/`, or `hooks/` is a violation of RS-01 and of the Reusability principle above, and Skill 08 flags it as duplicate detection.
+
+**Reuse here is not a code-quality preference — it is a correctness constraint.** The existing code is the user's, it is already trusted, and a generated duplicate silently competes with it: two `waitForElement()` implementations that drift apart, a generated login that bypasses the one the user maintains. Never refactor, rename, restructure, or overwrite that code to suit generated output. If a generated Page Object does not fit the base class, the Page Object is what changes.
+
+**Adding what's missing is routine; rewriting what exists is not.** If the framework has ten utility methods and the application needs an eleventh, add it in `utils/` beside the others, in the user's style, and use it — same for a new hook, fixture, or base-class method. What is forbidden is rewriting an existing method, because other tests already call it. Never add via a parallel folder, and never treat a gap as licence to reorganize surrounding code. See Skill 00's Gap Handling.
+
+**Empty `utils/`/`hooks/`/`fixtures/` are the user's business, not a violation.** RL-03's "never scaffold empty" constrains what this pipeline creates; it says nothing about how the user chose to lay out their own framework.
 
 ## Page Object Architecture
 Every application page gets its own Page Object (e.g. `LoginPage.ts`, `DashboardPage.ts`, `ProfilePage.ts`, `SettingsPage.ts`). Never combine multiple pages into one class.
@@ -76,7 +78,9 @@ A Test Case's `module` field (e.g. "Login", "Reports") and a Page Inventory `pag
 One module can span multiple pages (e.g. a "Reports" module might involve a Report List page and a Report Detail page — two Page Objects, one spec file). One page can serve multiple modules (e.g. a shared Search page might be exercised by both a "Search" module's test cases and a "Filter" module's). Grouping by `module` when generating Page Objects (instead of by the Page Inventory) is a common cause of the Page vs Component confusion above — always use the Page Inventory for Page Object boundaries, and `module` only for Spec file boundaries.
 
 ## BasePage
-All Page Objects inherit from `BasePage`, which contains only reusable functionality: navigation, generic waits, common helper methods. No page-specific logic belongs in BasePage.
+All Page Objects inherit from the project's base page class, which contains only reusable functionality: navigation, generic waits, common helper methods. No page-specific logic belongs in it.
+
+**This class is the user's, and it already exists.** Skill 00 identifies it **by reading the code, not by assuming the name** — it may be `BasePage.ts`, `BaseClass.ts`, `CommonPage.ts`, or anything else — and catalogues its methods in the Reuse Inventory. Every generated Page Object extends that class (RS-04) and calls its methods rather than reimplementing navigation, waiting, or interaction. It may gain a new method when the application needs one; its existing methods are never rewritten.
 
 ## Page Object Responsibilities
 Each Page Object contains: private locators, public action methods, public verification methods, compound business actions. Example: `fillUsername()`, `fillPassword()`, `clickLoginButton()`, `performLogin()`, `verifyLoginPageVisible()`, `verifyCurrentUrl()`. Implementation rules live in .claude/skills/knowledge/framework-rules.md.
@@ -98,16 +102,18 @@ A Spec file (`*.spec.ts`) may only contain: imports, `test.describe()`/`beforeEa
 - **Reusable Page Object action/verification logic used by two or more Page Objects** (not spec-level) → `BasePage`, per the BasePage section above — the Page Object layer's home for shared logic, never duplicated across individual `*Page.ts` classes.
 
 ## Mandatory Extraction Analysis (Critical)
-The placement rules above are worded "extract when logic is shared" — which is easy to satisfy by never looking. **Looking is not optional.** Before spec generation completes, run this analysis explicitly and record its conclusion:
+The placement rules above are worded "extract when logic is shared" — which is easy to satisfy by never looking. **Looking is not optional.** Before spec generation completes, run this analysis explicitly and record its conclusion.
 
-1. **List every `beforeEach`/`afterEach` body across all specs.** Any routine appearing in two or more specs goes to `hooks/`. Two specs that both log in, or both navigate to the same landing page, are the textbook case.
-2. **Identify shared preconditions.** Any state two or more specs need before their first step — an authenticated session, a seeded record, a selected user group — becomes a `fixtures/` fixture, not repeated setup.
-3. **Scan for repeated non-Playwright helper logic** — date formatting, string building, random values, environment reading, polling. Two occurrences means it belongs in `utils/`.
-4. **Scan Page Objects for methods with identical bodies** across two or more classes. Those move to `BasePage`.
+**Step 0, before all of it: re-read the Reuse Inventory.** Most of what this analysis would "extract" already exists in the user's framework, and the correct action is to *call it*, not to create a second copy in the same folder. Extraction is the fallback for logic that genuinely has no existing home.
 
-**Authentication is the near-universal case — and it is already solved before this analysis runs.** Almost every suite logs in before most tests, which is exactly why Skill 00 builds the authentication fixture from the Login Recipe *before any spec exists*. By the time Skill 07 generates specs, the fixture is already there to consume, so there is nothing to extract. If two or more specs require a logged-in user, they consume that fixture — never a copy-pasted `beforeEach` login. A framework whose specs each perform their own inline login has failed this analysis, and has also ignored a fixture that was sitting in `fixtures/` the whole time.
+1. **List every `beforeEach`/`afterEach` body across all specs.** If the Inventory already has a matching `hooks/` routine, call it (RS-01). Otherwise, a routine appearing in two or more specs is a reported gap → added to `hooks/` in the user's style. Two specs that both log in, or both navigate to the same landing page, are the textbook case — and are almost always already covered.
+2. **Identify shared preconditions.** Any state two or more specs need before their first step — an authenticated session, a seeded record, a selected user group. Check the Inventory's fixtures first; the authenticated session in particular is nearly always already provided.
+3. **Scan for repeated non-Playwright helper logic** — date formatting, string building, random values, environment reading, polling. Check `utils/` before writing any of it; two occurrences with nothing existing is a reported gap.
+4. **Scan generated Page Objects for methods with identical bodies** across two or more classes. If the base class already provides the behaviour, call it. If not, add it to the base class as a *new* method and record it — never by editing an existing method, and never duplicated across the individual `*Page.ts` classes.
 
-**Empty is a conclusion, not a default.** `utils/` and `hooks/` may legitimately end up holding nothing beyond what Skill 00 scaffolded — but only after the analysis ran and found nothing further shared, and that finding must be stated in the generation notes. (`fixtures/` is never empty: it holds the authentication fixture from Skill 00.) Folders left empty because nobody looked, while the same setup is duplicated across specs, is a violation of RL-01/RL-02 and the Reusability principle above, and Skill 08 flags it.
+**Authentication is the near-universal case — and the user already solved it.** Almost every suite logs in before most tests, so the base framework almost always provides an authenticated fixture or hook. Skill 00 records it in the Reuse Inventory by name. Every spec needing a session **consumes that** — never a copy-pasted `beforeEach` login. A framework whose generated specs each perform their own inline login has not merely failed this analysis; it has ignored working code the user wrote and maintains, and now has two login paths that will drift apart.
+
+**Adding nothing is a conclusion, not a default.** This analysis may legitimately end with nothing added to the user's `utils/`/`hooks/`/`fixtures/` — that is in fact the expected outcome, since they already contain the shared logic. But it must be the outcome of having *run* the analysis, and stated as such in the generation notes. Duplication left inline across specs while the existing helpers went unread is a violation of RL-01/RL-02, RS-01, and the Reusability principle above, and Skill 08 flags it.
 
 Together, `utils/`, `fixtures/`, `hooks/`, and `BasePage` are the framework's four homes for reusable logic. A helper used by exactly one spec file, with no expectation of reuse, may remain a private function in that file — this rule targets duplicated/shared logic, not every local function. Once a second spec needs the same logic, extract it. See .claude/skills/knowledge/framework-rules.md's Reusable Logic Rules (RL-01–RL-04) for the enforcement statement, and .claude/skills/knowledge/naming-conventions.md for `fixtures/`/`hooks/` file naming.
 
@@ -121,7 +127,7 @@ Tests → Page Objects → BasePage → Playwright
 Utilities may be used by both Tests and Page Objects. Never create circular dependencies.
 
 ## Code Reuse
-Before generating new methods, check whether an existing one can be reused or extended instead of duplicated. This is not advisory — it is enforced as RS-01/RS-02 in .claude/skills/skill-00-framework-scaffold.md, and the Scaffold Manifest in `execution-state.md` is the authoritative list of what already exists. Check it first; write only what genuinely isn't there.
+Before generating new methods, check whether an existing one can be reused or extended instead of duplicated. This is not advisory — it is enforced as RS-01/RS-02 in .claude/skills/skill-00-framework-inventory.md, and the Reuse Inventory in `execution-state.md` is the authoritative list of what already exists. Check it first; write only what genuinely isn't there.
 
 ## Scalability
 The framework should support additional pages, test suites, utility classes, multiple environments, and parallel execution without architectural changes.

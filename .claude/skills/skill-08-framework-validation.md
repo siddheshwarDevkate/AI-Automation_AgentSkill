@@ -7,7 +7,7 @@ Validate the generated framework against project standards, coding guidelines, a
 Load the Knowledge files and Template listed for Skill 08 in .claude/agent/agent.md's **Skill Dependency Matrix** — that table is the single source of truth and is deliberately not restated here. This Skill's row is **all ten** Knowledge files, because it validates the framework against every standard.
 
 ## Inputs
-Required: Test Case Model, Application Analysis Report (including its Page Inventory), **Scaffold Manifest (from Skill 00 — the authoritative inventory of what already exists, used by the Reuse-First Check)**, the scaffold itself (`BasePage.ts`, `fixtures/`, `hooks/`, `utils/`), Generated Page Objects (with verification methods from Skill 05), Generated Spec Files, `test-data/testData.ts` (from Skill 06), project standards.
+Required: Test Case Model, Application Analysis Report (including its Page Inventory), **Reuse Inventory (from Skill 00 — the authoritative catalogue of the user's base framework, used by the Reuse-First Check)**, the user's base framework itself (base class, `fixtures/`, `hooks/`, `utils/`), Generated Page Objects (with verification methods from Skill 05), Generated Spec Files, `test-data/testData.ts` (from Skill 06), project standards.
 Optional: existing framework, previous validation reports.
 
 ## Expected Output
@@ -83,13 +83,15 @@ Validate against: .claude/skills/knowledge/framework-rules.md, .claude/skills/kn
 ## Duplicate Detection
 Detect duplicate methods, Page Objects, scenarios, assertions, or test data. Recommend reuse.
 
-**Reuse-First Check (Critical).** Read the Scaffold Manifest from `execution-state.md` — the authoritative list of what Skill 00 created and what already existed — and validate the Reuse-First Rules (.claude/skills/skill-00-framework-scaffold.md) against the generated code:
-- **RS-01:** Any generated method, helper, fixture, or hook that duplicates something already in `BasePage`, `utils/`, `fixtures/`, `hooks/`, or another Page Object. The repair is to delete it and call the existing one.
+**Reuse-First Check (Critical).** Read the Reuse Inventory from `execution-state.md` — the authoritative catalogue of the user's hand-written base framework — and validate the Reuse-First Rules (.claude/skills/skill-00-framework-inventory.md) against the generated code. **The base framework is the user's; generated code is supposed to call into it, and anything that reimplements or rewrites it is a defect:**
+- **RS-01:** Any generated method, helper, fixture, or hook that duplicates something already in the Reuse Inventory. The repair is to delete it and call the existing one.
 - **RS-02:** Near-duplicates count. Two functions differing only by a literal, a selector, or a single line are one function with a parameter. Exact-match scanning alone will not catch these — compare bodies for shape, not just text.
-- **RS-03:** New shared logic that was added *beside* the scaffold rather than into it — a helper left inline in a spec (RL-01), or a new parallel folder serving a purpose `utils/`/`fixtures/`/`hooks/` already serves.
-- **RL-05:** Any spec performing its own login instead of consuming the Skill 00 authentication fixture. Flag every occurrence; the fixture's name is in the Scaffold Manifest, so there is never a case where the spec had no alternative.
+- **RS-03:** Shared logic added *beside* the user's structure rather than into it — a helper left inline in a spec (RL-01), or a new parallel folder serving a purpose `utils/`/`fixtures/`/`hooks/` already serves.
+- **RS-04:** Any generated Page Object not extending the project's own base class.
+- **RS-E3 (most serious):** **Any existing framework file changed beyond the addition of a new member.** Diff the user's base class, `utils/`, `fixtures/`, and `hooks/` against the Inventory's record of them. A rewritten method body, a changed signature, a rename, or a restructure is a violation however much cleaner it looks — other tests already depend on that code. Adding a *new* method, helper, or fixture beside the existing ones is fine and expected; changing an existing one is not.
+- **RL-05 / RS-05:** Any spec performing its own login instead of consuming the project's authentication fixture. Flag every occurrence; the fixture's name is in the Reuse Inventory, so there is never a case where the spec had no alternative.
 
-Duplication is not a style finding here — the whole point of scaffolding first was to make each shared concern exist exactly once, and a duplicate silently undoes that.
+Duplication is not a style finding here. The user maintains one implementation of each shared concern; a generated duplicate silently competes with it, and the two drift apart the first time the user updates theirs.
 
 **Extraction Analysis Check (Critical):** Verify .claude/skills/knowledge/framework-architecture.md's Mandatory Extraction Analysis actually ran and was acted on. Independently re-check it — do not take the generation notes' word for it:
 - Compare every spec's `beforeEach`/`afterEach` against every other spec's. Any routine appearing in two or more specs and not imported from `hooks/` or a fixture is a violation of RL-01/RL-02.
