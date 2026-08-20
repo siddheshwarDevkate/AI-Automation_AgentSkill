@@ -10,13 +10,15 @@ Template assignment is declared in .claude/agent/agent.md's Skill Dependency Mat
 Generate one Page Object per Page Inventory entry (.claude/skills/knowledge/framework-architecture.md's Page Identity Test) — never one per UI pattern, component, or feature. Each Page Object contains only logic related to that one real page — never combine multiple pages into a single class, and never split a single page's table/dropdown/search/filter patterns into classes of their own.
 
 ## Generation Workflow
-Check/Generate BasePage → Analyze Page → Identify Elements (including every pattern/component found on it) → Generate Locators → Generate Constructor → Generate Navigation Methods → Generate Action Methods → Generate Baseline Verification Methods → Generate Compound Business Methods → Validate Output (incl. Page Object Count Rule)
+Read the Reuse Inventory (the project's base class and helpers) → Analyze Page → Identify Elements (including every pattern/component found on it) → Generate Locators → Generate Constructor → Generate Navigation Methods → Generate Action Methods → Generate Baseline Verification Methods → Generate Compound Business Methods → Validate Output (incl. Page Object Count Rule)
 
 ## File Structure (fixed order)
 Imports → Class Declaration → Private Locator Variables → Constructor → Navigation Methods → Input Methods → Click Methods → Selection Methods → Verification Methods → Compound Business Methods → Private Helper Methods (optional). Never change this order.
 
-## BasePage (generate once, first — see .claude/skills/skill-04-page-object-generation.md)
-Every Page Object extends this. It contains only reusable, page-agnostic functionality — never page-specific logic:
+## The Project's Base Class — REFERENCE ONLY, DO NOT GENERATE
+**The base class is hand-written and owned by the user.** Skill 00 read it and recorded its real name, methods, and import path in the **Reuse Inventory** (.claude/skills/skill-00-framework-inventory.md) — read that, and extend whatever is actually there. It may be `BasePage.ts`, `BaseClass.ts`, `CommonPage.ts`, or anything else.
+
+The listing below is **an illustration of the shape such a class normally has**, so the rules that follow it (`protected page`, no generic `waitForPageLoad()`) have something concrete to refer to. It is not a file to generate, and it is not a specification the user's class has to match:
 
 ```typescript
 import { Page } from '@playwright/test';
@@ -52,7 +54,7 @@ async navigateTo(): Promise<void> {
 }
 ```
 
-If `BasePage.ts` already exists in the target framework, reuse it as-is — do not regenerate or overwrite it.
+**Never generate, regenerate, or overwrite the base class.** Call what the Reuse Inventory says exists (RS-01), and extend the project's class by its real name (RS-04). If the application needs a shared behaviour the class genuinely lacks, add it as a **new** method in the user's own style and record it in the Inventory — never by rewriting an existing method, which other tests already call.
 
 ## Imports
 Generate only required imports, e.g.:
@@ -244,4 +246,4 @@ export class LoginPage extends BasePage {
 Every generated Page Object must follow framework rules, locator strategy, naming conventions, and Playwright best practices; use explicit return types; use async/await correctly; avoid duplicate logic; be production ready.
 
 ## Validation Checklist
-✓ `BasePage.ts` present (generated or reused) · ✓ one class per file, one file per Page Inventory entry · ✓ every detected pattern/component folded into its page's own class, none given its own file · ✓ correct imports · ✓ private readonly locators · ✓ constructor initializes every locator · ✓ public action methods · ✓ public verification methods (baseline + Skill 05 additions) · ✓ compound business methods · ✓ no unused code · ✓ no fabricated locators · ✓ follows all project standards
+✓ every class extends the project's own base class, by its real name · ✓ no base class generated, and no existing base-class method rewritten · ✓ no method written that the Reuse Inventory already provides · ✓ one class per file, one file per Page Inventory entry · ✓ every detected pattern/component folded into its page's own class, none given its own file · ✓ correct imports · ✓ private readonly locators · ✓ constructor initializes every locator · ✓ public action methods · ✓ public verification methods (baseline + Skill 05 additions) · ✓ compound business methods · ✓ no unused code · ✓ no fabricated locators · ✓ follows all project standards

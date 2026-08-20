@@ -39,7 +39,7 @@ let dashboardPage: DashboardPage;
 ```
 
 ## Test Setup (`beforeEach()`)
-Responsibilities: create Page Objects, navigate to the starting page, perform common initialization. Never place assertions inside `beforeEach()`.
+Responsibilities: construct Page Objects and navigate to the starting page. Never place assertions inside `beforeEach()`, and never place a login here.
 ```typescript
 test.beforeEach(async ({ page }) => {
     loginPage = new LoginPage(page);
@@ -48,9 +48,9 @@ test.beforeEach(async ({ page }) => {
 });
 ```
 
-**When two or more specs share this setup, it does not stay here.** Per .claude/skills/knowledge/framework-architecture.md's Mandatory Extraction Analysis, repeated setup moves out — and logging in is the case that comes up in almost every suite.
+**Authentication never lives here — the project already provides it.** The user's framework has a hand-written authentication fixture; Skill 00 recorded its name in the **Reuse Inventory**. Consume it (RS-05). There is nothing to "extract later," because it was never yours to duplicate — and a second login path drifts from the one the user maintains the first time they change it.
 
-Wrong — the same login copied into every spec file:
+Wrong — an inline login, whether copied across specs or written into just one:
 ```typescript
 // login.spec.ts, reports.spec.ts, settings.spec.ts ... all repeating this
 test.beforeEach(async ({ page }) => {
@@ -60,9 +60,9 @@ test.beforeEach(async ({ page }) => {
 });
 ```
 
-Right — one fixture in `fixtures/auth.fixture.ts`, imported everywhere:
+Right — consume the project's existing fixture. Its real name and import path come from the Reuse Inventory; the listing below shows the shape of such a fixture so the consuming spec makes sense, **not a file to generate**:
 ```typescript
-// fixtures/auth.fixture.ts
+// fixtures/auth.fixture.ts — USER-OWNED, shown for reference
 import { test as base } from '@playwright/test';
 import { LoginPage } from '../pages/LoginPage';
 import { validUsername, validPassword } from '../test-data/testData';
