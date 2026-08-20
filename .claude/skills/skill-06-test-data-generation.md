@@ -1,5 +1,5 @@
 ---
-name: skill-06-test-data-generation.md
+name: skill-06-test-data-generation
 description: Generate test-data/testData.ts plus the Test Data Lifecycle Plan, emitting uniqueness factories and teardown requirements for every state-creating or state-mutating test case.
 ---
 

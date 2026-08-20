@@ -1,5 +1,5 @@
 ---
-name: skill-00-framework-inventory.md
+name: skill-00-framework-inventory
 description: Gate the run on target readiness - Phase A environment (Test Case file, runner, browser, application + Login Recipe), then Phase B project (compiles, base framework present) - and read the user's hand-written base framework into the Reuse Inventory that every later Skill calls into.
 ---
 

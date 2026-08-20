@@ -1,5 +1,5 @@
 ---
-name: skill-04-page-object-generation.md
+name: skill-04-page-object-generation
 description: Generate exactly one Page Object per Page Inventory entry, extending the project's own base class and calling its existing methods rather than reimplementing them.
 ---
 

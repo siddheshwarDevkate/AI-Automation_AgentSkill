@@ -1,5 +1,5 @@
 ---
-name: skill-07-spec-generation.md
+name: skill-07-spec-generation
 description: Generate exactly one spec test per test case, tagged with its Test Case ID, wiring together Page Object methods, verification methods, and data constants that already exist.
 ---
 

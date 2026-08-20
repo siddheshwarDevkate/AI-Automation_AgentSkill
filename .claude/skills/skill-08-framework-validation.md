@@ -1,5 +1,5 @@
 ---
-name: skill-08-framework-validation.md
+name: skill-08-framework-validation
 description: Validate the generated framework against every standard - compilation check first, then architecture, traceability, reuse, and lifecycle - identifying issues without modifying anything.
 ---
 

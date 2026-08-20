@@ -1,5 +1,5 @@
 ---
-name: skill-10-framework-review.md
+name: skill-10-framework-review
 description: Make the final production-readiness decision, weighted by actual execution results rather than static validation alone, and generate the review report and README.
 ---
 
