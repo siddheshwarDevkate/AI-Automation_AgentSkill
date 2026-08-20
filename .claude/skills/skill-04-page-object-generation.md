@@ -1,3 +1,8 @@
+---
+name: skill-04-page-object-generation.md
+description: Generate exactly one Page Object per Page Inventory entry, extending the project's own base class and calling its existing methods rather than reimplementing them.
+---
+
 # SKILL 04 — PAGE OBJECT GENERATION
 
 ## Purpose

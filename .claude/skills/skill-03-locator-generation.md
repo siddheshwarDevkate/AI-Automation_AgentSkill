@@ -1,3 +1,8 @@
+---
+name: skill-03-locator-generation.md
+description: Derive stable, validated locators from the live application, grouped by real page, following the locator priority order.
+---
+
 # SKILL 03 — LOCATOR GENERATION
 
 ## Purpose

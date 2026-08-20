@@ -1,3 +1,8 @@
+---
+name: skill-01-test-case-analysis.md
+description: Parse the supplied CSV/Excel Test Case file into the canonical Test Case Model - the mandatory source of scenario truth that drives every downstream Skill.
+---
+
 # SKILL 01 — TEST CASE ANALYSIS
 
 ## Purpose

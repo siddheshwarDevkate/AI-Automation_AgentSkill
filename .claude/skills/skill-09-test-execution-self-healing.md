@@ -1,3 +1,8 @@
+---
+name: skill-09-test-execution-self-healing.md
+description: Execute the suite in stages (canary, systemic-first repair, batches, failing-set-only re-runs, one final full run), repair framework-side failures without weakening them, and produce the Execution Report.
+---
+
 # SKILL 09 — TEST EXECUTION & SELF-HEALING
 
 ## Purpose

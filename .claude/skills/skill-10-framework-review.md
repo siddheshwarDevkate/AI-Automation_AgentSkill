@@ -1,3 +1,8 @@
+---
+name: skill-10-framework-review.md
+description: Make the final production-readiness decision, weighted by actual execution results rather than static validation alone, and generate the review report and README.
+---
+
 # SKILL 10 — FRAMEWORK REVIEW
 
 ## Purpose

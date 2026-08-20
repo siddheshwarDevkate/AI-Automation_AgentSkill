@@ -1,3 +1,8 @@
+---
+name: skill-02-application-analysis.md
+description: Explore the live application within Test Case scope to confirm how each supplied scenario actually behaves, and produce the Page Inventory that fixes how many Page Objects get generated.
+---
+
 # SKILL 02 — APPLICATION ANALYSIS
 
 ## Purpose

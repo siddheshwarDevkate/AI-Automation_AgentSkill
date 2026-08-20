@@ -1,3 +1,8 @@
+---
+name: skill-05-assertion-generation.md
+description: Append verification methods derived from each test case's expectedResult into the Page Object files Skill 04 already generated - never a separate verification class.
+---
+
 # SKILL 05 — ASSERTION GENERATION
 
 ## Purpose
