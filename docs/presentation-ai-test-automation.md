@@ -414,3 +414,39 @@ anything if any of these are missing.
 - User stories carry enough acceptance detail to derive test cases
 - A named reviewer signs off generated test cases before automation is built
 - Agreement on which environments the agent may run against — never production
+===================My Notes ===============================
+Good afternoon, everyone. Thanks for joining.
+
+Team, I want to walk you through something we've been building — a smarter way to do test automation using AI. Before I show you the solution, let me spend a minute on the problem, because I think a lot of you will relate to this.
+
+Team, in the traditional approach, when a new requirement comes in, a BA writes a user story in Jira. The functional details usually live somewhere else — in a separate document. QA has to read the story, then the functional doc, then check the wiki, and on top of all that, manually explore the application to understand how it actually behaves. Only after doing all of that do they sit down and write test cases by hand into Excel — steps, test data, expected results, and so on.
+
+And that's just the first half. Then it goes to automation. An automation tester reads each test case, opens dev tools, manually picks out locators, writes the spec files, writes the test files, and runs the suite — and then the real work starts: debugging, fixing broken locators, and running it again.
+
+Now — where does this actually cost us?
+
+A few things stand out:
+
+1. First, it's slow — weeks of effort before a single automated test even runs.
+2. Second, it's inconsistent — give the same suite to two different people, and you'll get two different frameworks back.
+3. Third, locators break easily — a small UI change, and half the suite fails.
+
+Put it all together, and automation — which is supposed to make releases faster and safer — ends up becoming the bottleneck itself.
+
+To overcome this problem, we've designed a solution. We've created two agents that work one after another to help us reach the end goal. Agent one writes test cases in plain English, and the second agent converts them into test scripts.
+
+---
+
+**Slide — Traditional Software Testing Life Cycle**
+
+We all know this traditional software testing life cycle. We analyze the requirements by reading multiple documents. Once analysis is done, we design the test cases, and a BA review follows. Then we do functional testing. Later, automation comes into the picture — we do test case analysis, an application walkthrough, and based on that, we design the automation framework.
+
+---
+
+**Slide — Agentic Software Testing Life Cycle**
+
+We've introduced this agentic software testing life cycle. The cycle stays the same — we've just replaced humans with agents at a few places.
+
+You can see that requirement analysis and test case creation are now completely done by an agent. After that, we've added a human checkpoint, where the BA or manual tester verifies whether the test cases are correct and whether they cover all the functionality.
+
+Once approved, we pass those test cases to the second agent. This agent analyzes the test cases, examines the application using Playwright MCP, and designs the test scripts. Then we've added one more human checkpoint — the automation tester verifies whether the test scripts are correct. They check traceability, confirming a 1:1 mapping between test cases and test scripts.
